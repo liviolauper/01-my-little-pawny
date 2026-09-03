@@ -1,0 +1,47 @@
+#board {
+  position: absolute;
+  height: 75vh;
+  width: 75vh;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+}
+
+#places {
+  height: 75vh;
+  width: 75vh;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+}
+
+.card.light {
+  background-color: #f0d9b5;
+}
+
+.card.dark {
+  background-color: #b58863;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+video {
+  display: block;
+}
+
+html {
+  background-color: pink;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
