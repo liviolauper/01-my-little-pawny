@@ -162,6 +162,62 @@ function movesForPawn(index, piece) { // déplacements possibles d'un "i"
   return moves; // renvoie les déplacements trouvés
 }
 
+/* ---------- ATTRIBUT DES "i" DU BAS ---------- */
+
+const FEARFUL_HALF = 0.35; // part des cas où le "i" peureux n'avance que d'une case
+const FEARFUL_STAY = 0.5; // au-delà de ce seuil, il ne bouge pas du tout
+
+// Le comportement d'un "i" contamine le suivant : plus le précédent a reculé,
+// plus le prochain risque de refuser d'avancer d'une case.
+const AFTER_FULL = 0.25; // le précédent a fait son double pas
+const AFTER_HALF = 0.5; // le précédent s'est replié à une case
+const AFTER_STAY = 0.75; // le précédent n'a pas bougé du tout
+const AFTER_MOVE = 0.25; // le précédent a avancé d'une case, le suivant suit à 75 %
+const AFTER_REFUSAL = 0.75; // le précédent a refusé, le suivant refuse à 75 %
+
+let fearRefusal = null; // risque que le prochain "i" refuse d'avancer, null tant que rien n'est lancé
+
+function moodDouble(from, to) { // le "i" peureux face à un double pas
+  const roll = Math.random(); // tire son comportement
+
+  if (roll < FEARFUL_HALF) { // il n'ose qu'une case
+    fearRefusal = AFTER_HALF; // le suivant hésitera à moitié
+    return from + forward(BOTTOM) * SIZE; // avance d'une seule case
+  }
+
+  if (roll < FEARFUL_STAY) { // il refuse de bouger
+    fearRefusal = AFTER_STAY; // le suivant hésitera beaucoup
+    return null; // le tour est perdu
+  }
+
+  fearRefusal = AFTER_FULL; // il a obéi, le suivant hésitera peu
+  return to; // double pas accompli
+}
+
+function moodSingle(to) { // le "i" peureux face à une avance d'une case
+  if (fearRefusal === null) return to; // aucun "i" n'a encore donné le ton
+
+  if (Math.random() < fearRefusal) { // la peur du précédent le gagne
+    fearRefusal = AFTER_REFUSAL; // son refus contamine le suivant
+    return null; // le tour est perdu
+  }
+
+  fearRefusal = AFTER_MOVE; // son courage rassure le suivant
+  return to; // il avance d'une case
+}
+
+function moodTarget(from, to) { // ajuste le coup selon l'attribut choisi
+  const piece = state[from]; // pièce déplacée
+  if (piece.side !== BOTTOM) return to; // l'attribut ne concerne que le parti du bas
+  if (piece.type !== 'i') return to; // ni les autres familles de pièces
+  if (pawnMood !== 'peureux') return to; // les "vaillants" obéissent toujours
+  if (toCol(to) !== toCol(from)) return to; // une prise en diagonale ne fait pas peur
+
+  const distance = Math.abs(toRow(to) - toRow(from)); // longueur du coup demandé
+  if (distance === 2) return moodDouble(from, to); // double pas demandé
+  return moodSingle(to); // simple avance demandée
+}
+
 /* ---------- PIÈCE "L" : LE CAVALIER ---------- */
 
 const KNIGHT_JUMPS = [ // les 8 sauts en L, en [ligne, colonne]
@@ -412,6 +468,12 @@ function move(from, to) { // déplace une pièce
   if (turn === TOP) setTimeout(playTop, 400); // l'algorithme joue après une pause
 }
 
+function skipTurn() { // le parti du bas perd son tour sans bouger
+  turn = TOP; // la main passe au parti du haut
+  clearSelection(); // remet à zéro et redessine
+  setTimeout(playTop, 400); // l'algorithme joue après une pause
+}
+
 function playTop() { // coup de l'algorithme du parti du haut
   if (turn !== TOP) return; // ce n'est pas son tour
   const pick = bestMove(TOP); // coup choisi par l'algorithme
@@ -438,7 +500,9 @@ function onPlaceClick(index) { // réagit au clic sur une case
   if (turn !== BOTTOM) return; // pas le tour du joueur
 
   if (legalMoves.includes(index)) { // clic sur un déplacement proposé
-    move(selected, index); // effectue le déplacement
+    const target = moodTarget(selected, index); // l'attribut peut changer le coup
+    if (target === null) skipTurn(); // le "i" a eu peur, le tour est perdu
+    else move(selected, target); // sinon le coup est joué
     return; // stoppe ici
   }
 
