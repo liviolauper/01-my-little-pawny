@@ -79,10 +79,59 @@ function movesForPawn(index, piece) { // déplacements possibles d'un "i"
   return moves; // renvoie les déplacements trouvés
 }
 
+const KNIGHT_JUMPS = [ // les 8 sauts en L, en [ligne, colonne]
+  [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+  [1, -2], [1, 2], [2, -1], [2, 1],
+];
+
+function movesForKnight(index) { // déplacements possibles d'un "L"
+  const moves = []; // liste à remplir
+  const row = toRow(index); // ligne de départ
+  const col = toCol(index); // colonne de départ
+
+  for (const [dr, dc] of KNIGHT_JUMPS) { // essaie chaque saut
+    const r = row + dr; // ligne d'arrivée
+    const c = col + dc; // colonne d'arrivée
+    if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) continue; // hors du damier
+
+    const target = r * SIZE + c; // case d'arrivée
+    if (state[target] === null) moves.push(target); // le L saute, seule l'arrivée compte
+  }
+
+  return moves; // renvoie les déplacements trouvés
+}
+
+const ROOK_LINES = [ // les 4 directions droites, en [ligne, colonne]
+  [-1, 0], [1, 0], [0, -1], [0, 1],
+];
+
+function movesForRook(index) { // déplacements possibles d'un "T"
+  const moves = []; // liste à remplir
+  const row = toRow(index); // ligne de départ
+  const col = toCol(index); // colonne de départ
+
+  for (const [dr, dc] of ROOK_LINES) { // essaie chaque direction
+    let r = row + dr; // première ligne dans cette direction
+    let c = col + dc; // première colonne dans cette direction
+
+    while (r >= 0 && r < SIZE && c >= 0 && c < SIZE) { // tant qu'on reste sur le damier
+      const target = r * SIZE + c; // case examinée
+      if (state[target] !== null) break; // case occupée, la direction s'arrête
+      moves.push(target); // case libre, on peut s'y poser
+      r += dr; // avance d'une case de plus
+      c += dc; // avance d'une case de plus
+    }
+  }
+
+  return moves; // renvoie les déplacements trouvés
+}
+
 function movesFor(index) { // déplacements possibles d'une case donnée
   const piece = state[index]; // pièce présente sur la case
   if (piece === null) return []; // case vide, rien à déplacer
   if (piece.type === 'i') return movesForPawn(index, piece); // règle du "i"
+  if (piece.type === 'L') return movesForKnight(index); // règle du "L"
+  if (piece.type === 'T') return movesForRook(index); // règle du "T"
   return []; // autres pièces pas encore programmées
 }
 
