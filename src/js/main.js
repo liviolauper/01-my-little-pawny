@@ -101,16 +101,20 @@ function movesForKnight(index) { // déplacements possibles d'un "L"
   return moves; // renvoie les déplacements trouvés
 }
 
-const ROOK_LINES = [ // les 4 directions droites, en [ligne, colonne]
+const STRAIGHT = [ // les 4 directions droites, en [ligne, colonne]
   [-1, 0], [1, 0], [0, -1], [0, 1],
 ];
 
-function movesForRook(index) { // déplacements possibles d'un "T"
+const DIAGONAL = [ // les 4 diagonales, en [ligne, colonne]
+  [-1, -1], [-1, 1], [1, -1], [1, 1],
+];
+
+function slide(index, directions) { // glisse en ligne jusqu'à un obstacle
   const moves = []; // liste à remplir
   const row = toRow(index); // ligne de départ
   const col = toCol(index); // colonne de départ
 
-  for (const [dr, dc] of ROOK_LINES) { // essaie chaque direction
+  for (const [dr, dc] of directions) { // essaie chaque direction
     let r = row + dr; // première ligne dans cette direction
     let c = col + dc; // première colonne dans cette direction
 
@@ -126,12 +130,21 @@ function movesForRook(index) { // déplacements possibles d'un "T"
   return moves; // renvoie les déplacements trouvés
 }
 
+function movesForRook(index) { // déplacements possibles d'un "T"
+  return slide(index, STRAIGHT); // seulement les lignes droites
+}
+
+function movesForQueen(index) { // déplacements possibles d'un "W"
+  return slide(index, STRAIGHT.concat(DIAGONAL)); // les droites et les diagonales
+}
+
 function movesFor(index) { // déplacements possibles d'une case donnée
   const piece = state[index]; // pièce présente sur la case
   if (piece === null) return []; // case vide, rien à déplacer
   if (piece.type === 'i') return movesForPawn(index, piece); // règle du "i"
   if (piece.type === 'L') return movesForKnight(index); // règle du "L"
   if (piece.type === 'T') return movesForRook(index); // règle du "T"
+  if (piece.type === 'W') return movesForQueen(index); // règle du "W"
   return []; // autres pièces pas encore programmées
 }
 
