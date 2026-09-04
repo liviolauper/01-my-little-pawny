@@ -164,58 +164,82 @@ function movesForPawn(index, piece) { // déplacements possibles d'un "i"
 
 /* ---------- ATTRIBUT DES "i" DU BAS ---------- */
 
-const FEARFUL_HALF = 0.35; // part des cas où le "i" peureux n'avance que d'une case
-const FEARFUL_STAY = 0.5; // au-delà de ce seuil, il ne bouge pas du tout
+// Les deux attributs suivent la même mécanique : le "i" dévie du coup demandé,
+// le peureux en avançant moins, le vaillant en avançant plus.
+const MOOD_OBEY = 0.5; // part des cas où le premier "i" fait exactement le double pas
+const MOOD_SMALL = 0.35; // part des cas où il dévie d'un cran
+const MOOD_BIG = 0.15; // part des cas où il dévie de deux crans
 
-// Le comportement d'un "i" contamine le suivant : plus le précédent a reculé,
-// plus le prochain risque de refuser d'avancer d'une case.
-const AFTER_FULL = 0.25; // le précédent a fait son double pas
-const AFTER_HALF = 0.5; // le précédent s'est replié à une case
-const AFTER_STAY = 0.75; // le précédent n'a pas bougé du tout
-const AFTER_MOVE = 0.25; // le précédent a avancé d'une case, le suivant suit à 75 %
-const AFTER_REFUSAL = 0.75; // le précédent a refusé, le suivant refuse à 75 %
+// Le comportement d'un "i" contamine le suivant : plus le précédent a dévié,
+// plus le prochain risque de dévier à son tour.
+const AFTER_OBEY = 0.25; // le précédent a fait exactement ce qu'on lui demandait
+const AFTER_SMALL = 0.5; // le précédent a dévié d'un cran
+const AFTER_BIG = 0.75; // le précédent a dévié de deux crans
+const AFTER_DEVIATE = 0.75; // le précédent a dévié, le suivant dévie à 75 %
 
-let fearRefusal = null; // risque que le prochain "i" refuse d'avancer, null tant que rien n'est lancé
+let moodRisk = null; // risque que le prochain "i" dévie, null tant que rien n'est lancé
 
-function moodDouble(from, to) { // le "i" peureux face à un double pas
-  const roll = Math.random(); // tire son comportement
+function advance(from, cases) { // avance d'autant de cases que possible, sans sauter
+  const step = forward(BOTTOM); // sens d'avance du parti du bas
+  const col = toCol(from); // colonne du "i", elle ne change pas
+  let row = toRow(from); // ligne atteinte pour l'instant
 
-  if (roll < FEARFUL_HALF) { // il n'ose qu'une case
-    fearRefusal = AFTER_HALF; // le suivant hésitera à moitié
-    return from + forward(BOTTOM) * SIZE; // avance d'une seule case
+  for (let n = 0; n < cases; n++) { // avance case par case
+    const next = row + step; // ligne suivante
+    if (next < 0 || next >= SIZE) break; // bord du damier atteint
+    if (!isFree(next * SIZE + col)) break; // une pièce barre la route
+    row = next; // la case est franchie
   }
 
-  if (roll < FEARFUL_STAY) { // il refuse de bouger
-    fearRefusal = AFTER_STAY; // le suivant hésitera beaucoup
-    return null; // le tour est perdu
-  }
-
-  fearRefusal = AFTER_FULL; // il a obéi, le suivant hésitera peu
-  return to; // double pas accompli
+  if (row === toRow(from)) return null; // il n'a pas pu bouger d'un pouce
+  return row * SIZE + col; // case finalement atteinte
 }
 
-function moodSingle(to) { // le "i" peureux face à une avance d'une case
-  if (fearRefusal === null) return to; // aucun "i" n'a encore donné le ton
+function shift(from, to, distance, crans) { // dévie le coup demandé d'un nombre de crans
+  const wanted = distance + crans; // longueur finalement tentée
+  if (wanted <= 0) return null; // il n'avance pas du tout et perd son tour
+  return advance(from, wanted) ?? to; // avance autant que le damier le permet
+}
 
-  if (Math.random() < fearRefusal) { // la peur du précédent le gagne
-    fearRefusal = AFTER_REFUSAL; // son refus contamine le suivant
-    return null; // le tour est perdu
+function moodFirst(from, to, distance) { // le premier "i" joué donne le ton
+  const roll = Math.random(); // tire son comportement
+  const way = pawnMood === 'peureux' ? -1 : 1; // le peureux dévie en moins, le vaillant en plus
+
+  if (roll < MOOD_BIG) { // il dévie de deux crans
+    moodRisk = AFTER_BIG; // le suivant déviera beaucoup
+    return shift(from, to, distance, 2 * way); // deux cases de moins ou de plus
   }
 
-  fearRefusal = AFTER_MOVE; // son courage rassure le suivant
-  return to; // il avance d'une case
+  if (roll < MOOD_BIG + MOOD_SMALL) { // il dévie d'un cran
+    moodRisk = AFTER_SMALL; // le suivant déviera à moitié
+    return shift(from, to, distance, way); // une case de moins ou de plus
+  }
+
+  moodRisk = AFTER_OBEY; // il a obéi, le suivant déviera peu
+  return to; // coup accompli tel que demandé
+}
+
+function moodNext(from, to, distance) { // les "i" suivants subissent la contagion
+  const way = pawnMood === 'peureux' ? -1 : 1; // sens de la déviation
+
+  if (Math.random() < moodRisk) { // le comportement du précédent le gagne
+    moodRisk = AFTER_DEVIATE; // sa déviation contamine le suivant
+    return shift(from, to, distance, way); // une case de moins ou de plus
+  }
+
+  moodRisk = AFTER_OBEY; // il a obéi, le suivant déviera peu
+  return to; // coup accompli tel que demandé
 }
 
 function moodTarget(from, to) { // ajuste le coup selon l'attribut choisi
   const piece = state[from]; // pièce déplacée
   if (piece.side !== BOTTOM) return to; // l'attribut ne concerne que le parti du bas
   if (piece.type !== 'i') return to; // ni les autres familles de pièces
-  if (pawnMood !== 'peureux') return to; // les "vaillants" obéissent toujours
-  if (toCol(to) !== toCol(from)) return to; // une prise en diagonale ne fait pas peur
+  if (toCol(to) !== toCol(from)) return to; // une prise en diagonale n'est pas concernée
 
   const distance = Math.abs(toRow(to) - toRow(from)); // longueur du coup demandé
-  if (distance === 2) return moodDouble(from, to); // double pas demandé
-  return moodSingle(to); // simple avance demandée
+  if (moodRisk === null) return moodFirst(from, to, distance); // aucun "i" n'a encore joué
+  return moodNext(from, to, distance); // les suivants héritent du ton donné
 }
 
 /* ---------- PIÈCE "L" : LE CAVALIER ---------- */
