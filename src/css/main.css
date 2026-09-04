@@ -8,11 +8,41 @@
 }
 
 #places {
+  position: relative;
   height: 75vh;
   width: 75vh;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(6, 1fr);
+}
+
+.place {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 4vh;
+  font-weight: bold;
+}
+
+.place.white {
+  color: #ffffff;
+}
+
+.place.black {
+  color: #000000;
+}
+
+.place.selected {
+  outline: 0.4vh solid #4e9a06;
+  outline-offset: -0.4vh;
+}
+
+.place.move::after {
+  content: '';
+  height: 25%;
+  width: 25%;
+  border-radius: 50%;
+  background-color: rgba(78, 154, 6, 0.6);
 }
 
 .card.light {
