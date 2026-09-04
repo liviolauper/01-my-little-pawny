@@ -1,127 +1,176 @@
-const board = document.querySelector('#board');
-const places = document.querySelector('#places');
+const board = document.querySelector('#board'); // récupère la grille des couleurs
+const places = document.querySelector('#places'); // récupère la grille des pièces
+const start = document.querySelector('#start'); // récupère le bouton de départ
 
-const SIZE = 6;
+const SIZE = 6; // côté du damier, 6 cases
 
-for (let row = 0; row < SIZE; row++) {
-  for (let col = 0; col < SIZE; col++) {
-    const card = document.createElement('div');
-    card.classList.add('card', (row + col) % 2 === 0 ? 'light' : 'dark');
-    board.appendChild(card);
+for (let row = 0; row < SIZE; row++) { // parcourt chaque ligne
+  for (let col = 0; col < SIZE; col++) { // parcourt chaque colonne
+    const card = document.createElement('div'); // crée une case
+    card.classList.add('card', (row + col) % 2 === 0 ? 'light' : 'dark'); // beige ou brun en alternance
+    board.appendChild(card); // ajoute la case au damier
   }
 }
 
-const pieces = [
-  'T', 'L', 'W', 'm', 'L', 'T',
+const pieces = [ // disposition de départ, une lettre par case
+  'T', 'L', 'W', 'cuck', 'L', 'T',
   'i', 'i', 'i', 'i', 'i', 'i',
   '',  '',  '',  '',  '',  '',
   '',  '',  '',  '',  '',  '',
   'i', 'i', 'i', 'i', 'i', 'i',
-  'T', 'L', 'W', 'm', 'L', 'T',
+  'T', 'L', 'W', 'cuck', 'L', 'T',
 ];
 
-const TOP = 'top';
-const BOTTOM = 'bottom';
+const TOP = 'top'; // nom du parti du haut
+const BOTTOM = 'bottom'; // nom du parti du bas
 
-const topIsWhite = Math.random() < 0.5;
+const topIsWhite = Math.random() < 0.5; // tire au sort la couleur du haut
 
-// État du jeu : une case = null ou { type, side }
-const state = pieces.map((type, i) => {
-  if (type === '') return null;
-  return { type, side: i < pieces.length / 2 ? TOP : BOTTOM };
+const state = pieces.map((type, i) => { // transforme les lettres en état de jeu
+  if (type === '') return null; // case vide
+  return { type, side: i < pieces.length / 2 ? TOP : BOTTOM }; // pièce + son parti
 });
 
-let selected = null;
-let legalMoves = [];
+let selected = null; // case actuellement sélectionnée
+let legalMoves = []; // cases où la pièce sélectionnée peut aller
+let turn = topIsWhite ? TOP : BOTTOM; // le parti blanc commence
+const hasPlayed = { top: false, bottom: false }; // dit si un parti a déjà joué
+let started = false; // la partie n'a pas encore commencé
 
-function toRow(index) {
-  return Math.floor(index / SIZE);
+function toRow(index) { // numéro de ligne d'une case
+  return Math.floor(index / SIZE); // division entière par la largeur
 }
 
-function toCol(index) {
-  return index % SIZE;
+function toCol(index) { // numéro de colonne d'une case
+  return index % SIZE; // reste de la division par la largeur
 }
 
-function isWhiteSide(side) {
-  return side === TOP ? topIsWhite : !topIsWhite;
+function isWhiteSide(side) { // dit si un parti est blanc
+  return side === TOP ? topIsWhite : !topIsWhite; // le bas a toujours la couleur opposée
 }
 
-// Direction d'avance : le bas monte, le haut descend
-function forward(side) {
-  return side === BOTTOM ? -1 : 1;
+function forward(side) { // sens d'avance d'un parti
+  return side === BOTTOM ? -1 : 1; // le bas monte, le haut descend
 }
 
-function movesForPawn(index, piece) {
-  const moves = [];
-  const row = toRow(index) + forward(piece.side);
-  if (row < 0 || row >= SIZE) return moves;
-
-  const target = row * SIZE + toCol(index);
-  if (state[target] === null) moves.push(target);
-
-  return moves;
+function startRow(side) { // ligne de départ des "i" d'un parti
+  return side === BOTTOM ? SIZE - 2 : 1; // avant-dernière ligne en bas, deuxième en haut
 }
 
-function movesFor(index) {
-  const piece = state[index];
-  if (piece === null) return [];
-  if (piece.type === 'i') return movesForPawn(index, piece);
-  return [];
+function movesForPawn(index, piece) { // déplacements possibles d'un "i"
+  const moves = []; // liste à remplir
+  const col = toCol(index); // colonne de la pièce, elle ne change pas
+  const step = forward(piece.side); // sens d'avance du parti
+  const first = toRow(index) + step; // ligne juste devant la pièce
+  if (first < 0 || first >= SIZE) return moves; // sortie du damier, aucun déplacement
+
+  const one = first * SIZE + col; // case droit devant
+  if (state[one] !== null) return moves; // bloquée, on ne peut pas avancer
+  moves.push(one); // avance d'une case possible
+
+  if (hasPlayed[piece.side]) return moves; // le parti a déjà joué, plus de double pas
+  if (toRow(index) !== startRow(piece.side)) return moves; // pas au départ, pas de double pas
+
+  const second = first + step; // deuxième ligne devant la pièce
+  if (second < 0 || second >= SIZE) return moves; // sortie du damier
+  const two = second * SIZE + col; // case deux crans devant
+  if (state[two] === null) moves.push(two); // avance de deux cases possible
+
+  return moves; // renvoie les déplacements trouvés
 }
 
-function select(index) {
-  selected = index;
-  legalMoves = movesFor(index);
-  render();
+function movesFor(index) { // déplacements possibles d'une case donnée
+  const piece = state[index]; // pièce présente sur la case
+  if (piece === null) return []; // case vide, rien à déplacer
+  if (piece.type === 'i') return movesForPawn(index, piece); // règle du "i"
+  return []; // autres pièces pas encore programmées
 }
 
-function clearSelection() {
-  selected = null;
-  legalMoves = [];
-  render();
+function select(index) { // sélectionne une pièce
+  selected = index; // mémorise la case cliquée
+  legalMoves = movesFor(index); // calcule ses déplacements
+  render(); // redessine pour montrer la sélection
 }
 
-function move(from, to) {
-  state[to] = state[from];
-  state[from] = null;
-  clearSelection();
+function clearSelection() { // annule la sélection
+  selected = null; // plus aucune case retenue
+  legalMoves = []; // plus aucun déplacement affiché
+  render(); // redessine sans les repères
 }
 
-function onPlaceClick(index) {
-  if (legalMoves.includes(index)) {
-    move(selected, index);
-    return;
+function move(from, to) { // déplace une pièce
+  const side = state[from].side; // parti qui joue ce coup
+  state[to] = state[from]; // la pièce arrive sur la case visée
+  state[from] = null; // sa case de départ devient vide
+  hasPlayed[side] = true; // ce parti a fait son premier coup
+  turn = side === TOP ? BOTTOM : TOP; // la main passe à l'autre parti
+  clearSelection(); // remet à zéro et redessine
+  if (turn === TOP) setTimeout(playTop, 400); // l'algorithme joue après une pause
+}
+
+function allMoves(side) { // tous les coups jouables par un parti
+  const list = []; // liste à remplir
+  for (let i = 0; i < state.length; i++) { // parcourt les cases
+    const piece = state[i]; // contenu de la case
+    if (piece === null || piece.side !== side) continue; // pas une pièce de ce parti
+    for (const to of movesFor(i)) list.push({ from: i, to }); // note chaque coup possible
+  }
+  return list; // renvoie tous les coups
+}
+
+function playTop() { // coup de l'algorithme du parti du haut
+  if (turn !== TOP) return; // ce n'est pas son tour
+  const list = allMoves(TOP); // coups disponibles
+  if (list.length === 0) return; // aucun coup, il passe
+  const pick = list[Math.floor(Math.random() * list.length)]; // choix au hasard
+  move(pick.from, pick.to); // joue le coup choisi
+}
+
+function onPlaceClick(index) { // réagit au clic sur une case
+  if (!started) return; // la partie n'a pas commencé
+  if (turn !== BOTTOM) return; // pas le tour du joueur
+
+  if (legalMoves.includes(index)) { // clic sur un déplacement proposé
+    move(selected, index); // effectue le déplacement
+    return; // stoppe ici
   }
 
-  const piece = state[index];
-  // Le parti du bas est joué à la main, le haut sera géré par l'algorithme
-  if (piece !== null && piece.side === BOTTOM) {
-    select(index);
-    return;
+  const piece = state[index]; // pièce éventuelle sur la case cliquée
+  if (piece !== null && piece.side === BOTTOM) { // seul le parti du bas se joue à la main
+    select(index); // sélectionne cette pièce
+    return; // stoppe ici
   }
 
-  clearSelection();
+  clearSelection(); // clic ailleurs, on désélectionne
 }
 
-function render() {
-  places.replaceChildren();
+function render() { // dessine la grille des pièces
+  places.replaceChildren(); // vide la grille avant de la refaire
 
-  for (let i = 0; i < state.length; i++) {
-    const piece = state[i];
-    const place = document.createElement('div');
-    place.classList.add('place');
+  for (let i = 0; i < state.length; i++) { // parcourt les 36 cases
+    const piece = state[i]; // contenu de la case
+    const place = document.createElement('div'); // crée la case
+    place.classList.add('place'); // style de base
 
-    if (piece !== null) {
-      place.textContent = piece.type;
-      place.classList.add(isWhiteSide(piece.side) ? 'white' : 'black');
+    if (piece !== null) { // il y a une pièce
+      place.textContent = piece.type; // affiche sa lettre
+      place.classList.add(isWhiteSide(piece.side) ? 'white' : 'black'); // couleur de son parti
     }
 
-    if (i === selected) place.classList.add('selected');
-    if (legalMoves.includes(i)) place.classList.add('move');
+    if (i === selected) place.classList.add('selected'); // marque la case sélectionnée
+    if (legalMoves.includes(i)) place.classList.add('move'); // marque les déplacements possibles
 
-    place.addEventListener('click', () => onPlaceClick(i));
-    places.appendChild(place);
+    place.addEventListener('click', () => onPlaceClick(i)); // rend la case cliquable
+    places.appendChild(place); // ajoute la case à la grille
   }
 }
 
-render();
+function onStart() { // lance la partie au clic du bouton
+  if (started) return; // déjà lancée
+  started = true; // la partie est en cours
+  start.disabled = true; // le bouton ne sert plus
+  if (turn === TOP) playTop(); // si le haut est blanc, il joue tout de suite
+}
+
+start.addEventListener('click', onStart); // rend le bouton cliquable
+render(); // premier affichage du jeu

@@ -53,6 +53,21 @@
   background-color: #b58863;
 }
 
+#start {
+  position: absolute;
+  bottom: 2vh;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1vh 2vh;
+  font-size: 2vh;
+  cursor: pointer;
+}
+
+#start:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
