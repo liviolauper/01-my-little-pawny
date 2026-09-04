@@ -11,7 +11,15 @@
     <div id="places">
       <div id="hints"></div>
     </div>
-    <button id="start">Débuter la partie</button>
+    <div id="setup">
+      <label for="level">Adversaire</label>
+      <select id="level">
+        <option value="1">Débutant (~400 élo)</option>
+        <option value="2" selected>Intermédiaire (~1500 élo)</option>
+        <option value="3">Professionnel (~2500 élo)</option>
+      </select>
+      <button id="start">Débuter la partie</button>
+    </div>
 
     <div id="popup" class="hidden">
       <div id="popup-box">

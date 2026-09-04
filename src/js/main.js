@@ -5,6 +5,8 @@ const places = document.querySelector('#places'); // récupère la grille des pi
 const start = document.querySelector('#start'); // récupère le bouton de départ
 const popup = document.querySelector('#popup'); // récupère la fenêtre de choix
 const hints = document.querySelector('#hints'); // récupère la grille des encadrés
+const setup = document.querySelector('#setup'); // récupère la barre de réglages
+const levelSelect = document.querySelector('#level'); // récupère le choix du niveau
 
 /* ---------- DAMIER ---------- */
 
@@ -46,6 +48,7 @@ let started = false; // la partie n'a pas encore commencé
 const hasPlayed = { top: false, bottom: false }; // dit si un parti a déjà joué
 const captured = { top: [], bottom: [] }; // pièces prises par chaque parti
 let pawnMood = 'peureux'; // humeur choisie pour les "i" du bas
+let level = 2; // niveau de l'adversaire, intermédiaire par défaut
 
 /* ---------- OUTILS COMMUNS À TOUTES LES PIÈCES ---------- */
 
@@ -211,6 +214,191 @@ function allMoves(side) { // tous les coups jouables par un parti
   return list; // renvoie tous les coups
 }
 
+/* ---------- ÉVALUATION D'UNE POSITION ---------- */
+
+const VALUES = { // valeur brute de chaque pièce, en centièmes de "i"
+  i: 100, // le pion
+  L: 320, // le cavalier
+  T: 500, // la tour
+  W: 900, // la reine
+  cuk: 20000, // le roi, perdre le sien coûte la partie
+};
+
+// Tables de position taillées pour 6x6, écrites du point de vue du parti du bas.
+// La première ligne est le fond adverse, la dernière est son propre fond.
+const TABLES = {
+  i: [ // le "i" gagne à avancer et à tenir le centre
+    90, 90, 90, 90, 90, 90,
+    40, 45, 50, 50, 45, 40,
+    15, 20, 30, 30, 20, 15,
+     5, 10, 20, 20, 10,  5,
+     0,  0,  5,  5,  0,  0,
+     0,  0,  0,  0,  0,  0,
+  ],
+  L: [ // le "L" perd sa force sur les bords
+    -40, -20, -10, -10, -20, -40,
+    -20,   0,  10,  10,   0, -20,
+    -10,  10,  20,  20,  10, -10,
+    -10,  10,  20,  20,  10, -10,
+    -20,   0,  10,  10,   0, -20,
+    -40, -20, -10, -10, -20, -40,
+  ],
+  T: [ // le "T" aime les lignes avancées
+     5, 10, 10, 10, 10,  5,
+     5, 10, 10, 10, 10,  5,
+     0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,
+    -5,  0,  0,  5,  5, -5,
+     0,  0,  0,  5,  5,  0,
+  ],
+  W: [ // le "W" préfère le centre sans trop s'exposer
+    -20, -10, -5, -5, -10, -20,
+    -10,   0,  5,  5,   0, -10,
+     -5,   5, 10, 10,   5,  -5,
+     -5,   5, 10, 10,   5,  -5,
+    -10,   0,  5,  5,   0, -10,
+    -20, -10, -5, -5, -10, -20,
+  ],
+  cuk: [ // le "cuk" reste à l'abri au fond
+    -30, -40, -40, -40, -40, -30,
+    -30, -40, -40, -40, -40, -30,
+    -20, -30, -30, -30, -30, -20,
+    -10, -20, -20, -20, -20, -10,
+     10,  10,   0,   0,  10,  10,
+     20,  30,  10,  10,  30,  20,
+  ],
+};
+
+function other(side) { // parti adverse
+  return side === TOP ? BOTTOM : TOP; // l'un ou l'autre
+}
+
+function tableValue(index, piece) { // bonus de position d'une pièce
+  const table = TABLES[piece.type]; // table de sa famille
+  if (piece.side === BOTTOM) return table[index]; // les tables sont écrites pour le bas
+  return table[(SIZE - 1 - toRow(index)) * SIZE + toCol(index)]; // pour le haut, on retourne le damier
+}
+
+function evaluate(side) { // note la position du point de vue d'un parti
+  let score = 0; // total à remplir
+
+  for (let i = 0; i < state.length; i++) { // parcourt les cases
+    const piece = state[i]; // contenu de la case
+    if (piece === null) continue; // case vide
+
+    const value = VALUES[piece.type] + tableValue(i, piece); // valeur brute plus position
+    score += piece.side === side ? value : -value; // les siennes comptent, celles d'en face retirent
+  }
+
+  return score; // renvoie la note
+}
+
+/* ---------- RECHERCHE DU MEILLEUR COUP ---------- */
+
+const LEVELS = { // les trois niveaux proposés
+  1: { depth: 1, blunder: 0.45, blind: 0.55 }, // débutant, ~400 élo
+  2: { depth: 3, blunder: 0.10, blind: 0.10 }, // intermédiaire, ~1500 élo
+  3: { depth: 5, blunder: 0, blind: 0 }, // professionnel, ~2500 élo
+};
+
+const MATE = 100000; // note d'une partie gagnée
+
+function applyMove(from, to) { // joue un coup sans toucher à l'affichage
+  const taken = state[to]; // pièce éventuellement prise
+  state[to] = state[from]; // la pièce avance
+  state[from] = null; // sa case de départ se vide
+  return taken; // garde la pièce prise pour pouvoir revenir en arrière
+}
+
+function undoMove(from, to, taken) { // annule un coup joué par applyMove
+  state[from] = state[to]; // la pièce revient à son départ
+  state[to] = taken; // la pièce prise reprend sa place
+}
+
+function orderedMoves(side) { // coups triés, les prises d'abord
+  const list = allMoves(side); // tous les coups du parti
+
+  for (const m of list) { // note chaque coup
+    const victim = state[m.to]; // pièce visée, s'il y en a une
+    m.gain = victim === null ? 0 : VALUES[victim.type] - VALUES[state[m.from].type]; // intérêt de la prise
+  }
+
+  list.sort((a, b) => b.gain - a.gain); // les prises intéressantes en tête
+  return list; // renvoie la liste triée
+}
+
+function negamax(side, depth, alpha, beta) { // explore l'arbre des coups
+  if (depth === 0) return evaluate(side); // profondeur atteinte, on note la position
+
+  const list = orderedMoves(side); // coups possibles
+  if (list.length === 0) return evaluate(side); // bloqué, on note la position
+
+  let best = -Infinity; // meilleure note trouvée
+
+  for (const m of list) { // essaie chaque coup
+    const taken = applyMove(m.from, m.to); // joue le coup
+
+    if (taken !== null && taken.type === 'cuk') { // le roi adverse tombe
+      undoMove(m.from, m.to, taken); // remet la position en place
+      return MATE + depth; // partie gagnée, inutile de chercher plus loin
+    }
+
+    const score = -negamax(other(side), depth - 1, -beta, -alpha); // l'adversaire répond
+    undoMove(m.from, m.to, taken); // remet la position en place
+
+    if (score > best) best = score; // nouveau meilleur coup
+    if (best > alpha) alpha = best; // relève le plancher
+    if (alpha >= beta) break; // l'adversaire éviterait cette branche, on l'élague
+  }
+
+  return best; // renvoie la meilleure note
+}
+
+function weakenMoves(list, blind) { // fait oublier des prises au débutant
+  if (blind === 0) return list; // le professionnel ne rate rien
+
+  const kept = list.filter((m) => { // trie les coups un à un
+    if (isFree(m.to)) return true; // un simple déplacement est toujours gardé
+    return Math.random() > blind; // une prise passe parfois inaperçue
+  });
+
+  return kept.length === 0 ? list : kept; // s'il ne reste rien, on garde tout
+}
+
+function bestMove(side) { // choisit le coup du parti dirigé par l'algorithme
+  const rules = LEVELS[level]; // réglages du niveau choisi
+  let list = orderedMoves(side); // coups possibles, prises en tête
+  if (list.length === 0) return null; // aucun coup jouable
+
+  list = weakenMoves(list, rules.blind); // le débutant laisse passer des prises
+
+  if (Math.random() < rules.blunder) { // le joueur faible commet une faute
+    return list[Math.floor(Math.random() * list.length)]; // coup pris au hasard
+  }
+
+  let best = null; // meilleur coup trouvé
+  let bestScore = -Infinity; // sa note
+
+  for (const m of list) { // essaie chaque coup
+    const taken = applyMove(m.from, m.to); // joue le coup
+
+    if (taken !== null && taken.type === 'cuk') { // il prend le roi adverse
+      undoMove(m.from, m.to, taken); // remet la position en place
+      return m; // rien de mieux à jouer
+    }
+
+    const score = -negamax(other(side), rules.depth - 1, -Infinity, Infinity); // note du coup
+    undoMove(m.from, m.to, taken); // remet la position en place
+
+    if (score > bestScore || (score === bestScore && Math.random() < 0.3)) { // meilleur, ou égal au hasard
+      bestScore = score; // retient la note
+      best = m; // retient le coup
+    }
+  }
+
+  return best; // renvoie le coup choisi
+}
+
 /* ---------- DÉROULEMENT DES TOURS ---------- */
 
 function move(from, to) { // déplace une pièce
@@ -226,9 +414,8 @@ function move(from, to) { // déplace une pièce
 
 function playTop() { // coup de l'algorithme du parti du haut
   if (turn !== TOP) return; // ce n'est pas son tour
-  const list = allMoves(TOP); // coups disponibles
-  if (list.length === 0) return; // aucun coup, il passe
-  const pick = list[Math.floor(Math.random() * list.length)]; // choix au hasard
+  const pick = bestMove(TOP); // coup choisi par l'algorithme
+  if (pick === null) return; // aucun coup, il passe
   move(pick.from, pick.to); // joue le coup choisi
 }
 
@@ -266,7 +453,8 @@ function onPlaceClick(index) { // réagit au clic sur une case
 
 function onStart() { // montre les pièces concernées au clic du bouton
   if (started) return; // partie déjà lancée
-  start.classList.add('hidden'); // le bouton laisse la place à la suite
+  level = Number(levelSelect.value); // retient le niveau de l'adversaire
+  setup.classList.add('hidden'); // les réglages laissent la place à la suite
   showHints(pawnsOf(BOTTOM)); // encadre en vert les "i" du joueur
   setTimeout(openPopup, 1200); // laisse le temps de les repérer
 }

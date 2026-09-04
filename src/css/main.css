@@ -118,18 +118,30 @@
   cursor: pointer;
 }
 
-#start {
+#setup {
   position: absolute;
   bottom: 2vh;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1vh;
+  font-size: 2vh;
+}
+
+#setup.hidden {
+  display: none;
+}
+
+#level {
+  padding: 0.8vh;
+  font-size: 2vh;
+}
+
+#start {
   padding: 1vh 2vh;
   font-size: 2vh;
   cursor: pointer;
-}
-
-#start.hidden {
-  display: none;
 }
 
 * {
