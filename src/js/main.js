@@ -3,6 +3,8 @@
 const board = document.querySelector('#board'); // récupère la grille des couleurs
 const places = document.querySelector('#places'); // récupère la grille des pièces
 const start = document.querySelector('#start'); // récupère le bouton de départ
+const popup = document.querySelector('#popup'); // récupère la fenêtre de choix
+const hints = document.querySelector('#hints'); // récupère la grille des encadrés
 
 /* ---------- DAMIER ---------- */
 
@@ -43,6 +45,7 @@ let turn = topIsWhite ? TOP : BOTTOM; // le parti blanc commence
 let started = false; // la partie n'a pas encore commencé
 const hasPlayed = { top: false, bottom: false }; // dit si un parti a déjà joué
 const captured = { top: [], bottom: [] }; // pièces prises par chaque parti
+let pawnMood = 'peureux'; // humeur choisie pour les "i" du bas
 
 /* ---------- OUTILS COMMUNS À TOUTES LES PIÈCES ---------- */
 
@@ -261,17 +264,30 @@ function onPlaceClick(index) { // réagit au clic sur une case
   clearSelection(); // clic ailleurs, on désélectionne
 }
 
-function onStart() { // lance la partie au clic du bouton
-  if (started) return; // déjà lancée
+function onStart() { // montre les pièces concernées au clic du bouton
+  if (started) return; // partie déjà lancée
+  start.classList.add('hidden'); // le bouton laisse la place à la suite
+  showHints(pawnsOf(BOTTOM)); // encadre en vert les "i" du joueur
+  setTimeout(openPopup, 1200); // laisse le temps de les repérer
+}
+
+function openPopup() { // affiche la fenêtre de choix
+  popup.classList.remove('hidden'); // affiche le choix de l'humeur
+}
+
+function onMood(event) { // lance la partie une fois l'humeur choisie
+  if (started) return; // partie déjà lancée
+  pawnMood = event.target.value; // retient l'humeur des "i" du bas
   started = true; // la partie est en cours
-  start.disabled = true; // le bouton ne sert plus
-  if (turn === TOP) playTop(); // si le haut est blanc, il joue tout de suite
+  popup.classList.add('hidden'); // referme la fenêtre de choix
+  clearHints(); // retire les encadrés verts
+  if (turn === TOP) setTimeout(playTop, 1000); // le haut est blanc, il joue après une seconde
 }
 
 /* ---------- AFFICHAGE ---------- */
 
 function render() { // dessine la grille des pièces
-  places.replaceChildren(); // vide la grille avant de la refaire
+  places.replaceChildren(hints); // vide la grille mais garde les encadrés
 
   for (let i = 0; i < state.length; i++) { // parcourt les 36 cases
     const piece = state[i]; // contenu de la case
@@ -297,7 +313,36 @@ function isWhiteSide(side) { // dit si un parti est blanc
   return side === TOP ? topIsWhite : !topIsWhite; // le bas a toujours la couleur opposée
 }
 
+function showHints(marked) { // encadre en vert une liste de cases
+  hints.replaceChildren(); // vide la grille des encadrés
+
+  for (let i = 0; i < state.length; i++) { // parcourt les 36 cases
+    const hint = document.createElement('div'); // crée la case d'encadré
+    hint.classList.add('hint'); // style de base
+    if (marked.includes(i)) hint.classList.add('marked'); // bordure verte sur les cases visées
+    hints.appendChild(hint); // ajoute la case à la grille
+  }
+}
+
+function clearHints() { // efface tous les encadrés
+  hints.replaceChildren(); // vide la grille des encadrés
+}
+
+function pawnsOf(side) { // cases des "i" d'un parti
+  const list = []; // liste à remplir
+  for (let i = 0; i < state.length; i++) { // parcourt les cases
+    const piece = state[i]; // contenu de la case
+    if (piece !== null && piece.side === side && piece.type === 'i') list.push(i); // un "i" du parti
+  }
+  return list; // renvoie les cases trouvées
+}
+
 /* ---------- LANCEMENT ---------- */
 
 start.addEventListener('click', onStart); // rend le bouton cliquable
+
+for (const radio of document.querySelectorAll('input[name="mood"]')) { // parcourt les deux choix
+  radio.addEventListener('change', onMood); // cocher un choix lance la partie
+}
+
 render(); // premier affichage du jeu

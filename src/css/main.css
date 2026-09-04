@@ -16,6 +16,19 @@
   grid-template-rows: repeat(6, 1fr);
 }
 
+#hints {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  pointer-events: none;
+}
+
+.hint.marked {
+  border: 0.5vh solid #4e9a06;
+}
+
 .place {
   display: flex;
   justify-content: center;
@@ -57,6 +70,54 @@
   background-color: #b58863;
 }
 
+#popup {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 3vh;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+#popup.hidden {
+  display: none;
+}
+
+#popup-box {
+  display: flex;
+  align-items: center;
+  gap: 4vh;
+  padding: 4vh;
+  border-radius: 1vh;
+  background-color: #f0d9b5;
+}
+
+#popup-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 20vh;
+  width: 20vh;
+  font-size: 14vh;
+  font-weight: bold;
+  color: #000000;
+  background-color: #b58863;
+}
+
+#popup-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+  font-size: 2.5vh;
+}
+
+#popup-choice label {
+  cursor: pointer;
+}
+
 #start {
   position: absolute;
   bottom: 2vh;
@@ -67,9 +128,8 @@
   cursor: pointer;
 }
 
-#start:disabled {
-  opacity: 0.4;
-  cursor: default;
+#start.hidden {
+  display: none;
 }
 
 * {

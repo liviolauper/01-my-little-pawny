@@ -8,8 +8,27 @@
   </head>
   <body>
     <div id="board"></div>
-    <div id="places"></div>
+    <div id="places">
+      <div id="hints"></div>
+    </div>
     <button id="start">Débuter la partie</button>
+
+    <div id="popup" class="hidden">
+      <div id="popup-box">
+        <div id="popup-card">i</div>
+
+        <div id="popup-choice">
+          <label>
+            <input type="radio" name="mood" value="peureux" />
+            Peureux
+          </label>
+          <label>
+            <input type="radio" name="mood" value="vaillants" />
+            Vaillants
+          </label>
+        </div>
+      </div>
+    </div>
 
     <script src="js/main.js" type="module"></script>
   </body>
