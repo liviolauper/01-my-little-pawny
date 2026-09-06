@@ -37,10 +37,14 @@
   font-weight: bold;
 }
 
+/* Les "i" font 16x16 pixels. Un agrandissement par nombre entier garde
+   chaque pixel carré et de taille identique : 16 x 4 = 64. */
 .place img {
-  height: 6vh;
-  width: 6vh;
+  height: 64px;
+  width: 64px;
   object-fit: contain;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
   pointer-events: none;
 }
 
@@ -100,6 +104,14 @@
   padding: 4vh;
   border-radius: 1vh;
   background-color: #f0d9b5;
+}
+
+#popup-card img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
 #popup-card {

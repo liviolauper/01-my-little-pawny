@@ -7,6 +7,7 @@ const popup = document.querySelector('#popup'); // récupère la fenêtre de cho
 const hints = document.querySelector('#hints'); // récupère la grille des encadrés
 const setup = document.querySelector('#setup'); // récupère la barre de réglages
 const levelSelect = document.querySelector('#level'); // récupère le choix du niveau
+const card = document.querySelector('#popup-card'); // récupère la carte de la fenêtre de choix
 
 /* ---------- DAMIER ---------- */
 
@@ -553,7 +554,15 @@ function onStart() { // montre les pièces concernées au clic du bouton
   setTimeout(openPopup, 1200); // laisse le temps de les repérer
 }
 
+function showCard(mood) { // remplit la carte de la fenêtre de choix
+  const img = document.createElement('img'); // crée l'image en grand
+  img.src = pieceSrc('i', 'big', isWhiteSide(BOTTOM), mood); // version en grand du "i" du joueur
+  img.alt = 'i'; // texte de remplacement
+  card.replaceChildren(img); // remplace le contenu de la carte
+}
+
 function openPopup() { // affiche la fenêtre de choix
+  showCard(pawnMood === 'peureux' ? 'weak' : 'strong'); // montre le "i" en grand
   popup.classList.remove('hidden'); // affiche le choix de l'humeur
 }
 
@@ -569,16 +578,29 @@ function onMood(event) { // lance la partie une fois l'humeur choisie
 
 /* ---------- AFFICHAGE ---------- */
 
-// Images des pièces, rangées dans src/img par couleur puis par attribut.
+// Images des pièces : src/img/00-pieces/<taille>/<couleur>/<attribut>/<pièce>.png
+// La taille "small" sert au damier, la taille "big" aux affichages en grand.
 const IMAGES = {
   i: { // le pion
-    'c-white': { // pièces blanches
-      weak: new URL('../img/c-white/weak/i.png', import.meta.url).href, // peureux
-      strong: new URL('../img/c-white/strong/i.png', import.meta.url).href, // vaillant
+    small: { // version damier
+      'c-white': {
+        weak: new URL('../img/00-pieces/1-small/c-white/weak/i.png', import.meta.url).href,
+        strong: new URL('../img/00-pieces/1-small/c-white/strong/i.png', import.meta.url).href,
+      },
+      'c-black': {
+        weak: new URL('../img/00-pieces/1-small/c-black/weak/i.png', import.meta.url).href,
+        strong: new URL('../img/00-pieces/1-small/c-black/strong/i.png', import.meta.url).href,
+      },
     },
-    'c-black': { // pièces noires
-      weak: new URL('../img/c-black/weak/i.png', import.meta.url).href, // peureux
-      strong: new URL('../img/c-black/strong/i.png', import.meta.url).href, // vaillant
+    big: { // version en grand
+      'c-white': {
+        weak: new URL('../img/00-pieces/0-big/c-white/weak/i.png', import.meta.url).href,
+        strong: new URL('../img/00-pieces/0-big/c-white/strong/i.png', import.meta.url).href,
+      },
+      'c-black': {
+        weak: new URL('../img/00-pieces/0-big/c-black/weak/i.png', import.meta.url).href,
+        strong: new URL('../img/00-pieces/0-big/c-black/strong/i.png', import.meta.url).href,
+      },
     },
   },
 };
@@ -595,18 +617,24 @@ function moodFolder(index, piece) { // dossier d'attribut d'une pièce
   return WEAK_COLUMNS.includes(toCol(index)) ? 'weak' : 'strong'; // intermédiaire, deux colonnes faibles
 }
 
+function pieceSrc(type, size, white, mood) { // chemin d'une image de pièce
+  const set = IMAGES[type]; // images de sa famille, s'il en existe
+  if (set === undefined) return null; // aucune image prévue
+  return set[size][white ? 'c-white' : 'c-black'][mood]; // taille, couleur, attribut
+}
+
 function drawPiece(place, index, piece) { // pose une pièce dans une case
   const white = isWhiteSide(piece.side); // couleur de son parti
   place.classList.add(white ? 'white' : 'black'); // sert aux pièces encore en lettres
 
-  const set = IMAGES[piece.type]; // images de sa famille, s'il en existe
-  if (set === undefined) { // aucune image prévue
+  const src = pieceSrc(piece.type, 'small', white, moodFolder(index, piece)); // version damier
+  if (src === null) { // aucune image prévue
     place.textContent = piece.type; // on garde la lettre
     return; // rien de plus à faire
   }
 
   const img = document.createElement('img'); // crée l'image
-  img.src = set[white ? 'c-white' : 'c-black'][moodFolder(index, piece)]; // couleur puis attribut
+  img.src = src; // image de la bonne taille, couleur et attribut
   img.alt = piece.type; // texte de remplacement
   place.appendChild(img); // pose l'image dans la case
 }
