@@ -37,6 +37,13 @@
   font-weight: bold;
 }
 
+.place img {
+  height: 10vh;
+  width: 10vh;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 .place.white {
   color: #ffffff;
 }

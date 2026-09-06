@@ -562,6 +562,30 @@ function onMood(event) { // lance la partie une fois l'humeur choisie
 
 /* ---------- AFFICHAGE ---------- */
 
+// Images des pièces, rangées dans src/img et repérées depuis ce fichier.
+const IMAGES = {
+  i: { // le pion
+    white: new URL('../img/i_white.png', import.meta.url).href, // le "i" blanc
+    black: new URL('../img/i_black.png', import.meta.url).href, // le "i" noir
+  },
+};
+
+function drawPiece(place, piece) { // pose une pièce dans une case
+  const white = isWhiteSide(piece.side); // couleur de son parti
+  place.classList.add(white ? 'white' : 'black'); // sert aux pièces encore en lettres
+
+  const set = IMAGES[piece.type]; // images de sa famille, s'il en existe
+  if (set === undefined) { // aucune image prévue
+    place.textContent = piece.type; // on garde la lettre
+    return; // rien de plus à faire
+  }
+
+  const img = document.createElement('img'); // crée l'image
+  img.src = white ? set.white : set.black; // choisit la version blanche ou noire
+  img.alt = piece.type; // texte de remplacement
+  place.appendChild(img); // pose l'image dans la case
+}
+
 function render() { // dessine la grille des pièces
   places.replaceChildren(hints); // vide la grille mais garde les encadrés
 
@@ -570,10 +594,7 @@ function render() { // dessine la grille des pièces
     const place = document.createElement('div'); // crée la case
     place.classList.add('place'); // style de base
 
-    if (piece !== null) { // il y a une pièce
-      place.textContent = piece.type; // affiche sa lettre
-      place.classList.add(isWhiteSide(piece.side) ? 'white' : 'black'); // couleur de son parti
-    }
+    if (piece !== null) drawPiece(place, piece); // pose la pièce, image ou lettre
 
     if (i === selected) place.classList.add('selected'); // marque la case sélectionnée
     if (legalMoves.includes(i)) { // case atteignable
