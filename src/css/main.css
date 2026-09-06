@@ -167,7 +167,11 @@ video {
 }
 
 html {
-  background-color: pink;
+  background-color: #000000;
+  background-image: url('../img/bg.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
   height: 100%;
   display: flex;
   justify-content: center;
