@@ -30,6 +30,7 @@
 }
 
 .place {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -39,13 +40,46 @@
 
 /* Les "i" font 16x16 pixels. Un agrandissement par nombre entier garde
    chaque pixel carré et de taille identique : 16 x 4 = 64. */
+.place .letter {
+  position: relative;
+  z-index: 1;
+}
+
 .place img {
+  position: relative;
+  z-index: 1;
   height: 64px;
   width: 64px;
   object-fit: contain;
   image-rendering: crisp-edges;
   image-rendering: pixelated;
   pointer-events: none;
+}
+
+/* Vignettage quand la pièce et son fond ont la même valeur.
+   Le centre s'assombrit ou s'éclaircit, les bords gardent la couleur de la case. */
+/* Images de 16x16 fabriquées en JS, étirées à la case sans lissage :
+   le vignettage montre les mêmes gros pixels que les pièces. */
+.place.dark::before,
+.place.light::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* Case pâle : centre sombre. */
+.place.dark::before {
+  background-image: var(--vignette-dark);
+}
+
+/* Case foncée : centre clair. */
+.place.light::before {
+  background-image: var(--vignette-light);
 }
 
 .place.white {
@@ -67,6 +101,8 @@
 
 .place.move::after {
   content: '';
+  position: relative;
+  z-index: 1;
   height: 25%;
   width: 25%;
   border-radius: 50%;
@@ -74,11 +110,11 @@
 }
 
 .card.light {
-  background-color: #f0d9b5;
+  background-color: #000;
 }
 
 .card.dark {
-  background-color: #b58863;
+  background-color: #fff;
 }
 
 #popup {

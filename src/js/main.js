@@ -1,3 +1,9 @@
+/* ==========================================================================
+   PARTIE 1 — FONCTIONNEMENT
+   Éléments du DOM, état de jeu, règles des pièces, algorithme de l'adversaire,
+   déroulement des tours et réactions aux clics.
+   ========================================================================== */
+
 /* ---------- ÉLÉMENTS DU DOM ---------- */
 
 const board = document.querySelector('#board'); // récupère la grille des couleurs
@@ -167,7 +173,6 @@ function movesForPawn(index, piece) { // déplacements possibles d'un "i"
 
 // Les deux attributs suivent la même mécanique : le "i" dévie du coup demandé,
 // le peureux en avançant moins, le vaillant en avançant plus.
-const MOOD_OBEY = 0.5; // part des cas où le premier "i" fait exactement le double pas
 const MOOD_SMALL = 0.35; // part des cas où il dévie d'un cran
 const MOOD_BIG = 0.15; // part des cas où il dévie de deux crans
 
@@ -283,6 +288,15 @@ function movesFor(index) { // déplacements possibles d'une case donnée
   if (piece.type === 'W') return movesForQueen(index, piece); // règle du "W"
   if (piece.type === 'cuk') return movesForKing(index, piece); // règle du "cuk"
   return []; // autres pièces pas encore programmées
+}
+
+function pawnsOf(side) { // cases des "i" d'un parti
+  const list = []; // liste à remplir
+  for (let i = 0; i < state.length; i++) { // parcourt les cases
+    const piece = state[i]; // contenu de la case
+    if (piece !== null && piece.side === side && piece.type === 'i') list.push(i); // un "i" du parti
+  }
+  return list; // renvoie les cases trouvées
 }
 
 function allMoves(side) { // tous les coups jouables par un parti
@@ -554,13 +568,6 @@ function onStart() { // montre les pièces concernées au clic du bouton
   setTimeout(openPopup, 1200); // laisse le temps de les repérer
 }
 
-function showCard(mood) { // remplit la carte de la fenêtre de choix
-  const img = document.createElement('img'); // crée l'image en grand
-  img.src = pieceSrc('i', 'big', isWhiteSide(BOTTOM), mood); // version en grand du "i" du joueur
-  img.alt = 'i'; // texte de remplacement
-  card.replaceChildren(img); // remplace le contenu de la carte
-}
-
 function openPopup() { // affiche la fenêtre de choix
   showCard(pawnMood === 'peureux' ? 'weak' : 'strong'); // montre le "i" en grand
   popup.classList.remove('hidden'); // affiche le choix de l'humeur
@@ -576,9 +583,15 @@ function onMood(event) { // lance la partie une fois l'humeur choisie
   if (turn === TOP) setTimeout(playTop, 1000); // le haut est blanc, il joue après une seconde
 }
 
-/* ---------- AFFICHAGE ---------- */
+/* ==========================================================================
+   PARTIE 2 — HABILLAGE
+   Images des pièces, vignettage des cases, encadrés verts, carte de la fenêtre
+   de choix et dessin de la grille.
+   ========================================================================== */
 
-// Images des pièces : src/img/00-pieces/<taille>/<couleur>/<attribut>/<pièce>.png
+/* ---------- IMAGES DES PIÈCES ---------- */
+
+// Chemins : src/img/00-pieces/<taille>/<couleur>/<attribut>/<pièce>.png
 // La taille "small" sert au damier, la taille "big" aux affichages en grand.
 const IMAGES = {
   i: { // le pion
@@ -605,7 +618,42 @@ const IMAGES = {
   },
 };
 
+/* ---------- VIGNETTAGE DES CASES ---------- */
+
+// Le vignettage est dessiné dans une image de 16x16 pixels, comme les pièces.
+// Étirée à la taille d'une case, elle montre les mêmes gros pixels.
+const VIGNETTE_SIZE = 16; // côté de l'image, en pixels
+const VIGNETTE_REACH = 0.7; // portée du dégradé, en part du côté
+
+function makeVignette(red, green, blue, alpha) { // fabrique une image de vignettage
+  const canvas = document.createElement('canvas'); // support de dessin
+  canvas.height = VIGNETTE_SIZE; // 16 pixels de haut
+  canvas.width = VIGNETTE_SIZE; // 16 pixels de large
+
+  const middle = VIGNETTE_SIZE / 2; // centre de l'image
+  const context = canvas.getContext('2d'); // outil de dessin
+  const gradient = context.createRadialGradient(middle, middle, 0, middle, middle, VIGNETTE_SIZE * VIGNETTE_REACH); // dégradé du centre vers les bords
+  gradient.addColorStop(0, `rgba(${red}, ${green}, ${blue}, ${alpha})`); // couleur pleine au centre
+  gradient.addColorStop(1, `rgba(${red}, ${green}, ${blue}, 0)`); // transparence aux bords
+
+  context.fillStyle = gradient; // applique le dégradé
+  context.fillRect(0, 0, VIGNETTE_SIZE, VIGNETTE_SIZE); // remplit l'image
+  return `url(${canvas.toDataURL()})`; // renvoie l'image prête pour le CSS
+}
+
+function setVignettes() { // met les deux vignettages à disposition du CSS
+  const root = document.documentElement.style; // variables du document
+  root.setProperty('--vignette-dark', makeVignette(0, 0, 0, 0.5)); // centre sombre
+  root.setProperty('--vignette-light', makeVignette(255, 255, 255, 0.25)); // centre clair
+}
+
+/* ---------- CHOIX DE L'IMAGE D'UNE PIÈCE ---------- */
+
 const WEAK_COLUMNS = [1, 3]; // deuxième et quatrième colonne, où le niveau 2 reste faible
+
+function isWhiteSide(side) { // dit si un parti est blanc
+  return side === TOP ? topIsWhite : !topIsWhite; // le bas a toujours la couleur opposée
+}
 
 function moodFolder(index, piece) { // dossier d'attribut d'une pièce
   if (piece.side === BOTTOM) { // le bas suit l'attribut choisi par le joueur
@@ -629,7 +677,10 @@ function drawPiece(place, index, piece) { // pose une pièce dans une case
 
   const src = pieceSrc(piece.type, 'small', white, moodFolder(index, piece)); // version damier
   if (src === null) { // aucune image prévue
-    place.textContent = piece.type; // on garde la lettre
+    const letter = document.createElement('span'); // crée la lettre
+    letter.classList.add('letter'); // la place au-dessus du vignettage
+    letter.textContent = piece.type; // affiche le nom de la pièce
+    place.appendChild(letter); // pose la lettre dans la case
     return; // rien de plus à faire
   }
 
@@ -639,13 +690,23 @@ function drawPiece(place, index, piece) { // pose une pièce dans une case
   place.appendChild(img); // pose l'image dans la case
 }
 
+function showCard(mood) { // remplit la carte de la fenêtre de choix
+  const img = document.createElement('img'); // crée l'image en grand
+  img.src = pieceSrc('i', 'big', isWhiteSide(BOTTOM), mood); // version en grand du "i" du joueur
+  img.alt = 'i'; // texte de remplacement
+  card.replaceChildren(img); // remplace le contenu de la carte
+}
+
+/* ---------- DESSIN DE LA GRILLE ---------- */
+
 function render() { // dessine la grille des pièces
   places.replaceChildren(hints); // vide la grille mais garde les encadrés
 
   for (let i = 0; i < state.length; i++) { // parcourt les 36 cases
     const piece = state[i]; // contenu de la case
     const place = document.createElement('div'); // crée la case
-    place.classList.add('place'); // style de base
+    const pale = (toRow(i) + toCol(i)) % 2 === 0; // même alternance que le damier
+    place.classList.add('place', pale ? 'light' : 'dark'); // retient la couleur du fond
 
     if (piece !== null) drawPiece(place, i, piece); // pose la pièce, image ou lettre
 
@@ -659,9 +720,7 @@ function render() { // dessine la grille des pièces
   }
 }
 
-function isWhiteSide(side) { // dit si un parti est blanc
-  return side === TOP ? topIsWhite : !topIsWhite; // le bas a toujours la couleur opposée
-}
+/* ---------- ENCADRÉS VERTS ---------- */
 
 function showHints(marked) { // encadre en vert une liste de cases
   hints.replaceChildren(); // vide la grille des encadrés
@@ -678,19 +737,11 @@ function clearHints() { // efface tous les encadrés
   hints.replaceChildren(); // vide la grille des encadrés
 }
 
-function pawnsOf(side) { // cases des "i" d'un parti
-  const list = []; // liste à remplir
-  for (let i = 0; i < state.length; i++) { // parcourt les cases
-    const piece = state[i]; // contenu de la case
-    if (piece !== null && piece.side === side && piece.type === 'i') list.push(i); // un "i" du parti
-  }
-  return list; // renvoie les cases trouvées
-}
-
 /* ---------- LANCEMENT ---------- */
 
 start.addEventListener('click', onStart); // rend le bouton cliquable
 levelSelect.addEventListener('change', onLevel); // change les "i" du haut aussitôt
+setVignettes(); // prépare les images de vignettage
 
 for (const radio of document.querySelectorAll('input[name="mood"]')) { // parcourt les deux choix
   radio.addEventListener('change', onMood); // cocher un choix lance la partie
