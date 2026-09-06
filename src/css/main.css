@@ -117,6 +117,80 @@
   background-color: #fff;
 }
 
+/* ---------- ARRIVÉE SUR LA PAGE ---------- */
+
+/* Tout ce qui se floute et se pixelise est réuni ici : fond, damier et pièces.
+   Le message d'accueil reste dehors, donc net. Le JS pilote le filtre. */
+#stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #000000;
+  background-image: url('../img/bg.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#filters {
+  position: absolute;
+}
+
+#intro {
+  position: fixed;
+  inset: 0;
+  z-index: 21;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5vh;
+  pointer-events: none;
+  font-size: 9vh;
+  font-weight: bold;
+  color: #fff;
+}
+
+#intro.done {
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+
+/* Les deux mots s'opacifient en rejoignant le centre, l'un depuis le haut du
+   viewport, l'autre depuis le bas. */
+.word {
+  opacity: 0;
+  animation: drop 0.6s ease-out forwards;
+}
+
+.word:nth-child(2) {
+  animation-name: rise;
+  animation-delay: 0.6s;
+}
+
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-60vh);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(60vh);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #popup {
   position: fixed;
   inset: 0;
@@ -138,8 +212,7 @@
   align-items: center;
   gap: 4vh;
   padding: 4vh;
-  border-radius: 1vh;
-  background-color: #f0d9b5;
+  background-color: #000;
 }
 
 #popup-card img {
@@ -154,12 +227,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 20vh;
-  width: 20vh;
+  height: 40vh;
+  width: 40vh;
   font-size: 14vh;
   font-weight: bold;
-  color: #000000;
-  background-color: #b58863;
+  background-color: #808080;
 }
 
 #popup-choice {
@@ -167,25 +239,57 @@
   flex-direction: column;
   gap: 2vh;
   font-size: 2.5vh;
+  color: #fff;
 }
 
-#popup-choice label {
+#mood {
+  width: 30vh;
   cursor: pointer;
 }
 
-#setup {
-  position: absolute;
-  bottom: 2vh;
-  left: 50%;
-  transform: translateX(-50%);
+#mood-labels {
   display: flex;
+  justify-content: space-between;
+  font-size: 2vh;
+}
+
+#mood-labels span {
+  opacity: 0.5;
+}
+
+#mood-labels span.picked {
+  opacity: 1;
+  font-weight: bold;
+}
+
+#confirm {
+  padding: 1vh 2vh;
+  font-size: 2vh;
+  cursor: pointer;
+}
+
+/* Pop-up de choix du niveau, au centre du viewport. */
+#setup {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 1vh;
   font-size: 2vh;
 }
 
 #setup.hidden {
   display: none;
+}
+
+/* Boîte allongée, taillée sur la silhouette du menu déroulant. */
+#setup-box {
+  display: flex;
+  align-items: center;
+  gap: 2vh;
+  padding: 3vh 4vh;
+  background-color: #000;
 }
 
 #level {
@@ -216,12 +320,9 @@ video {
 
 html {
   background-color: #000000;
-  background-image: url('../img/bg.png');
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  color: #fff;
 }

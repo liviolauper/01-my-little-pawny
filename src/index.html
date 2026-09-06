@@ -2,23 +2,43 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>eikon parcel starter</title>
+    <title>My Little Pawnies</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/main.css" />
   </head>
   <body>
-    <div id="board"></div>
-    <div id="places">
-      <div id="hints"></div>
+    <div id="stage">
+      <div id="board"></div>
+      <div id="places">
+        <div id="hints"></div>
+      </div>
     </div>
-    <div id="setup">
-      <label for="level">Adversaire</label>
-      <select id="level">
-        <option value="1">Débutant (~400 élo)</option>
-        <option value="2" selected>Intermédiaire (~1500 élo)</option>
-        <option value="3">Professionnel (~2500 élo)</option>
-      </select>
-      <button id="start">Débuter la partie</button>
+
+    <svg id="filters" width="0" height="0">
+      <filter id="pixelate">
+        <feFlood x="1" y="1" height="1" width="1" />
+        <feComposite id="pixel-size" width="8" height="8" />
+        <feTile result="grid" />
+        <feComposite in="SourceGraphic" in2="grid" operator="in" />
+        <feMorphology id="pixel-grow" operator="dilate" radius="4" />
+      </filter>
+    </svg>
+
+    <div id="intro">
+      <span class="word">bien</span>
+      <span class="word">venue</span>
+    </div>
+
+    <div id="setup" class="hidden">
+      <div id="setup-box">
+        <label for="level">Adversaire</label>
+        <select id="level">
+          <option value="1">Débutant (~400 élo)</option>
+          <option value="2" selected>Intermédiaire (~1500 élo)</option>
+          <option value="3">Professionnel (~2500 élo)</option>
+        </select>
+        <button id="start">Débuter la partie</button>
+      </div>
     </div>
 
     <div id="popup" class="hidden">
@@ -26,14 +46,13 @@
         <div id="popup-card"></div>
 
         <div id="popup-choice">
-          <label>
-            <input type="radio" name="mood" value="peureux" />
-            Peureux
-          </label>
-          <label>
-            <input type="radio" name="mood" value="vaillants" />
-            Vaillants
-          </label>
+          <input type="range" id="mood" min="0" max="2" step="1" value="1" />
+          <div id="mood-labels">
+            <span>Peureux</span>
+            <span>Soumis</span>
+            <span>Vaillants</span>
+          </div>
+          <button id="confirm">Valider</button>
         </div>
       </div>
     </div>

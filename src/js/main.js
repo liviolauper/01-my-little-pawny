@@ -14,6 +14,13 @@ const hints = document.querySelector('#hints'); // récupère la grille des enca
 const setup = document.querySelector('#setup'); // récupère la barre de réglages
 const levelSelect = document.querySelector('#level'); // récupère le choix du niveau
 const card = document.querySelector('#popup-card'); // récupère la carte de la fenêtre de choix
+const moodSlider = document.querySelector('#mood'); // récupère le curseur d'attribut
+const moodLabels = document.querySelectorAll('#mood-labels span'); // récupère les trois mots
+const confirm = document.querySelector('#confirm'); // récupère le bouton de validation
+const intro = document.querySelector('#intro'); // récupère le message d'accueil
+const stage = document.querySelector('#stage'); // récupère le fond, le damier et les pièces
+const pixelSize = document.querySelector('#pixel-size'); // récupère la taille des blocs du filtre
+const pixelGrow = document.querySelector('#pixel-grow'); // récupère l'épaisseur des blocs
 
 /* ---------- DAMIER ---------- */
 
@@ -54,8 +61,10 @@ let turn = topIsWhite ? TOP : BOTTOM; // le parti blanc commence
 let started = false; // la partie n'a pas encore commencé
 const hasPlayed = { top: false, bottom: false }; // dit si un parti a déjà joué
 const captured = { top: [], bottom: [] }; // pièces prises par chaque parti
-let pawnMood = 'peureux'; // humeur choisie pour les "i" du bas
+const MOODS = ['peureux', 'soumis', 'vaillants']; // les trois crans du curseur, dans l'ordre
+let pawnMood = 'soumis'; // attribut choisi pour les "i" du bas, cran du milieu par défaut
 let level = 2; // niveau de l'adversaire, intermédiaire par défaut
+let levelChosen = false; // tant que faux, toutes les pièces sortent de 01-start
 
 /* ---------- OUTILS COMMUNS À TOUTES LES PIÈCES ---------- */
 
@@ -239,6 +248,7 @@ function moodNext(from, to, distance) { // les "i" suivants subissent la contagi
 
 function moodTarget(from, to) { // ajuste le coup selon l'attribut choisi
   const piece = state[from]; // pièce déplacée
+  if (pawnMood === 'soumis') return to; // le soumis obéit toujours, aucun aléa
   if (piece.side !== BOTTOM) return to; // l'attribut ne concerne que le parti du bas
   if (piece.type !== 'i') return to; // ni les autres familles de pièces
   if (toCol(to) !== toCol(from)) return to; // une prise en diagonale n'est pas concernée
@@ -554,10 +564,51 @@ function onPlaceClick(index) { // réagit au clic sur une case
   clearSelection(); // clic ailleurs, on désélectionne
 }
 
+/* ---------- FLOU ET PIXELISATION DE L'ARRIVÉE ---------- */
+
+const PIXEL_MAX = 44; // côté des plus gros blocs, en pixels
+const BLUR_MAX = 4; // flou le plus épais, en vh
+const CLEAR_TIME = 1000; // durée du retour à la netteté, en millisecondes
+
+function setStage(amount) { // règle flou et pixelisation, de 1 à 0
+  const size = Math.max(1, Math.round(PIXEL_MAX * amount)); // côté des blocs
+  pixelSize.setAttribute('width', size); // largeur d'un bloc
+  pixelSize.setAttribute('height', size); // hauteur d'un bloc
+  pixelGrow.setAttribute('radius', size / 2); // les blocs se rejoignent
+
+  // Le flou passe en premier : les couleurs se mélangent, puis chaque bloc
+  // reprend cette moyenne. Ordre inverse, les blocs seraient flous à leur tour.
+  const filter = amount === 0 ? 'none' : `blur(${BLUR_MAX * amount}vh) url(#pixelate)`; // filtre du moment
+  stage.style.filter = filter; // applique le filtre au fond, au damier et aux pièces
+}
+
+function clearStage(startedAt) { // rend la netteté image par image
+  const spent = performance.now() - startedAt; // temps écoulé depuis le début
+  const amount = Math.max(0, 1 - spent / CLEAR_TIME); // part de flou restante
+
+  setStage(amount); // applique l'état du moment
+  if (amount > 0) requestAnimationFrame(() => clearStage(startedAt)); // continue tant qu'il reste du flou
+}
+
+function endIntro() { // efface le message d'accueil
+  intro.classList.add('done'); // les deux mots s'estompent
+  setTimeout(endBlur, 500); // attend la fin de cet effacement
+}
+
+function endBlur() { // rend la netteté au damier
+  clearStage(performance.now()); // lance la dépixelisation progressive
+  setTimeout(openSetup, CLEAR_TIME + 300); // laisse le damier redevenir net
+}
+
+function openSetup() { // affiche la pop-up de choix du niveau
+  setup.classList.remove('hidden'); // le choix de l'adversaire apparaît
+}
+
 function onLevel() { // réagit au changement de difficulté
   if (started) return; // partie déjà lancée, le niveau est figé
   level = Number(levelSelect.value); // retient le niveau de l'adversaire
-  render(); // redessine les "i" du haut selon ce niveau
+  levelChosen = true; // les pièces quittent 01-start
+  render(); // redessine les "i" selon ce niveau
 }
 
 function onStart() { // montre les pièces concernées au clic du bouton
@@ -569,13 +620,20 @@ function onStart() { // montre les pièces concernées au clic du bouton
 }
 
 function openPopup() { // affiche la fenêtre de choix
-  showCard(pawnMood === 'peureux' ? 'weak' : 'strong'); // montre le "i" en grand
-  popup.classList.remove('hidden'); // affiche le choix de l'humeur
+  onMood(); // met la carte au cran affiché par le curseur
+  popup.classList.remove('hidden'); // affiche le choix de l'attribut
 }
 
-function onMood(event) { // lance la partie une fois l'humeur choisie
+function onMood() { // réagit au déplacement du curseur
+  if (started) return; // partie déjà lancée, l'attribut est figé
+  pawnMood = MOODS[Number(moodSlider.value)]; // retient l'attribut visé
+  showCard(pawnMood); // montre le "i" correspondant en grand
+  markMoodLabel(); // met en avant le mot choisi
+}
+
+function onConfirm() { // lance la partie une fois l'attribut validé
   if (started) return; // partie déjà lancée
-  pawnMood = event.target.value; // retient l'humeur des "i" du bas
+  onMood(); // fige l'attribut affiché par le curseur
   started = true; // la partie est en cours
   popup.classList.add('hidden'); // referme la fenêtre de choix
   clearHints(); // retire les encadrés verts
@@ -591,31 +649,43 @@ function onMood(event) { // lance la partie une fois l'humeur choisie
 
 /* ---------- IMAGES DES PIÈCES ---------- */
 
-// Chemins : src/img/00-pieces/<taille>/<couleur>/<attribut>/<pièce>.png
+// Chemins : src/img/<dossier>/<taille>/<couleur>[/<attribut>]/<pièce>.png
+// 00-pieces range ses images par attribut, 01-start n'en a qu'une par couleur.
 // La taille "small" sert au damier, la taille "big" aux affichages en grand.
 const IMAGES = {
   i: { // le pion
     small: { // version damier
       'c-white': {
         weak: new URL('../img/00-pieces/1-small/c-white/weak/i.png', import.meta.url).href,
+        neutral: new URL('../img/01-start/1-small/c-white/i.png', import.meta.url).href,
         strong: new URL('../img/00-pieces/1-small/c-white/strong/i.png', import.meta.url).href,
       },
       'c-black': {
         weak: new URL('../img/00-pieces/1-small/c-black/weak/i.png', import.meta.url).href,
+        neutral: new URL('../img/01-start/1-small/c-black/i.png', import.meta.url).href,
         strong: new URL('../img/00-pieces/1-small/c-black/strong/i.png', import.meta.url).href,
       },
     },
     big: { // version en grand
       'c-white': {
         weak: new URL('../img/00-pieces/0-big/c-white/weak/i.png', import.meta.url).href,
+        neutral: new URL('../img/01-start/0-big/c-white/i.png', import.meta.url).href,
         strong: new URL('../img/00-pieces/0-big/c-white/strong/i.png', import.meta.url).href,
       },
       'c-black': {
         weak: new URL('../img/00-pieces/0-big/c-black/weak/i.png', import.meta.url).href,
+        neutral: new URL('../img/01-start/0-big/c-black/i.png', import.meta.url).href,
         strong: new URL('../img/00-pieces/0-big/c-black/strong/i.png', import.meta.url).href,
       },
     },
   },
+};
+
+// Chaque attribut pointe vers un jeu d'images.
+const MOOD_FOLDERS = {
+  peureux: 'weak', // dossier 00-pieces, version faible
+  soumis: 'neutral', // dossier 01-start
+  vaillants: 'strong', // dossier 00-pieces, version forte
 };
 
 /* ---------- VIGNETTAGE DES CASES ---------- */
@@ -656,9 +726,8 @@ function isWhiteSide(side) { // dit si un parti est blanc
 }
 
 function moodFolder(index, piece) { // dossier d'attribut d'une pièce
-  if (piece.side === BOTTOM) { // le bas suit l'attribut choisi par le joueur
-    return pawnMood === 'peureux' ? 'weak' : 'strong'; // peureux ou vaillant
-  }
+  if (!levelChosen) return 'neutral'; // aucun niveau choisi, tout le monde sort de 01-start
+  if (piece.side === BOTTOM) return MOOD_FOLDERS[pawnMood]; // le bas suit le curseur du joueur
 
   if (level === 1) return 'weak'; // débutant, tout le parti est faible
   if (level === 3) return 'strong'; // professionnel, tout le parti est fort
@@ -692,9 +761,14 @@ function drawPiece(place, index, piece) { // pose une pièce dans une case
 
 function showCard(mood) { // remplit la carte de la fenêtre de choix
   const img = document.createElement('img'); // crée l'image en grand
-  img.src = pieceSrc('i', 'big', isWhiteSide(BOTTOM), mood); // version en grand du "i" du joueur
+  img.src = pieceSrc('i', 'big', isWhiteSide(BOTTOM), MOOD_FOLDERS[mood]); // "i" du joueur en grand
   img.alt = 'i'; // texte de remplacement
   card.replaceChildren(img); // remplace le contenu de la carte
+}
+
+function markMoodLabel() { // met en avant le mot visé par le curseur
+  const picked = Number(moodSlider.value); // cran actuel du curseur
+  moodLabels.forEach((label, i) => label.classList.toggle('picked', i === picked)); // un seul mot en avant
 }
 
 /* ---------- DESSIN DE LA GRILLE ---------- */
@@ -742,9 +816,10 @@ function clearHints() { // efface tous les encadrés
 start.addEventListener('click', onStart); // rend le bouton cliquable
 levelSelect.addEventListener('change', onLevel); // change les "i" du haut aussitôt
 setVignettes(); // prépare les images de vignettage
+setStage(1); // flou et pixelisation au maximum à l'arrivée
+setTimeout(endIntro, 2000); // laisse jouer le flou et les deux mots
 
-for (const radio of document.querySelectorAll('input[name="mood"]')) { // parcourt les deux choix
-  radio.addEventListener('change', onMood); // cocher un choix lance la partie
-}
+moodSlider.addEventListener('input', onMood); // le curseur change l'image en direct
+confirm.addEventListener('click', onConfirm); // le bouton valide et lance la partie
 
 render(); // premier affichage du jeu
