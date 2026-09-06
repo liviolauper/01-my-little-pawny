@@ -539,9 +539,15 @@ function onPlaceClick(index) { // réagit au clic sur une case
   clearSelection(); // clic ailleurs, on désélectionne
 }
 
+function onLevel() { // réagit au changement de difficulté
+  if (started) return; // partie déjà lancée, le niveau est figé
+  level = Number(levelSelect.value); // retient le niveau de l'adversaire
+  render(); // redessine les "i" du haut selon ce niveau
+}
+
 function onStart() { // montre les pièces concernées au clic du bouton
   if (started) return; // partie déjà lancée
-  level = Number(levelSelect.value); // retient le niveau de l'adversaire
+  onLevel(); // fige le niveau affiché dans le menu
   setup.classList.add('hidden'); // les réglages laissent la place à la suite
   showHints(pawnsOf(BOTTOM)); // encadre en vert les "i" du joueur
   setTimeout(openPopup, 1200); // laisse le temps de les repérer
@@ -557,20 +563,39 @@ function onMood(event) { // lance la partie une fois l'humeur choisie
   started = true; // la partie est en cours
   popup.classList.add('hidden'); // referme la fenêtre de choix
   clearHints(); // retire les encadrés verts
+  render(); // redessine avec les images de l'attribut choisi
   if (turn === TOP) setTimeout(playTop, 1000); // le haut est blanc, il joue après une seconde
 }
 
 /* ---------- AFFICHAGE ---------- */
 
-// Images des pièces, rangées dans src/img et repérées depuis ce fichier.
+// Images des pièces, rangées dans src/img par couleur puis par attribut.
 const IMAGES = {
   i: { // le pion
-    white: new URL('../img/i_white.png', import.meta.url).href, // le "i" blanc
-    black: new URL('../img/i_black.png', import.meta.url).href, // le "i" noir
+    'c-white': { // pièces blanches
+      weak: new URL('../img/c-white/weak/i.png', import.meta.url).href, // peureux
+      strong: new URL('../img/c-white/strong/i.png', import.meta.url).href, // vaillant
+    },
+    'c-black': { // pièces noires
+      weak: new URL('../img/c-black/weak/i.png', import.meta.url).href, // peureux
+      strong: new URL('../img/c-black/strong/i.png', import.meta.url).href, // vaillant
+    },
   },
 };
 
-function drawPiece(place, piece) { // pose une pièce dans une case
+const WEAK_COLUMNS = [1, 3]; // deuxième et quatrième colonne, où le niveau 2 reste faible
+
+function moodFolder(index, piece) { // dossier d'attribut d'une pièce
+  if (piece.side === BOTTOM) { // le bas suit l'attribut choisi par le joueur
+    return pawnMood === 'peureux' ? 'weak' : 'strong'; // peureux ou vaillant
+  }
+
+  if (level === 1) return 'weak'; // débutant, tout le parti est faible
+  if (level === 3) return 'strong'; // professionnel, tout le parti est fort
+  return WEAK_COLUMNS.includes(toCol(index)) ? 'weak' : 'strong'; // intermédiaire, deux colonnes faibles
+}
+
+function drawPiece(place, index, piece) { // pose une pièce dans une case
   const white = isWhiteSide(piece.side); // couleur de son parti
   place.classList.add(white ? 'white' : 'black'); // sert aux pièces encore en lettres
 
@@ -581,7 +606,7 @@ function drawPiece(place, piece) { // pose une pièce dans une case
   }
 
   const img = document.createElement('img'); // crée l'image
-  img.src = white ? set.white : set.black; // choisit la version blanche ou noire
+  img.src = set[white ? 'c-white' : 'c-black'][moodFolder(index, piece)]; // couleur puis attribut
   img.alt = piece.type; // texte de remplacement
   place.appendChild(img); // pose l'image dans la case
 }
@@ -594,7 +619,7 @@ function render() { // dessine la grille des pièces
     const place = document.createElement('div'); // crée la case
     place.classList.add('place'); // style de base
 
-    if (piece !== null) drawPiece(place, piece); // pose la pièce, image ou lettre
+    if (piece !== null) drawPiece(place, i, piece); // pose la pièce, image ou lettre
 
     if (i === selected) place.classList.add('selected'); // marque la case sélectionnée
     if (legalMoves.includes(i)) { // case atteignable
@@ -637,6 +662,7 @@ function pawnsOf(side) { // cases des "i" d'un parti
 /* ---------- LANCEMENT ---------- */
 
 start.addEventListener('click', onStart); // rend le bouton cliquable
+levelSelect.addEventListener('change', onLevel); // change les "i" du haut aussitôt
 
 for (const radio of document.querySelectorAll('input[name="mood"]')) { // parcourt les deux choix
   radio.addEventListener('change', onMood); // cocher un choix lance la partie

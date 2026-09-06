@@ -38,8 +38,8 @@
 }
 
 .place img {
-  height: 10vh;
-  width: 10vh;
+  height: 6vh;
+  width: 6vh;
   object-fit: contain;
   pointer-events: none;
 }
