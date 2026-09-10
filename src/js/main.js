@@ -83,6 +83,9 @@ const intro = document.querySelector('#intro'); // récupère le message d'accue
 const stage = document.querySelector('#stage'); // récupère le fond, le damier et les pièces
 const pixelSize = document.querySelector('#pixel-size'); // récupère la taille des blocs du filtre
 const pixelGrow = document.querySelector('#pixel-grow'); // récupère l'épaisseur des blocs
+const duel = document.querySelector('#duel'); // récupère la page de confrontation
+const duelDefender = document.querySelector('#duel-defender'); // emplacement de l'occupante
+const duelIntruder = document.querySelector('#duel-intruder'); // emplacement de l'arrivante
 
 /* ---------- DAMIER ---------- */
 
@@ -91,7 +94,7 @@ const SIZE = 6; // côté du damier, 6 cases
 for (let row = 0; row < SIZE; row++) { // parcourt chaque ligne
   for (let col = 0; col < SIZE; col++) { // parcourt chaque colonne
     const card = document.createElement('div'); // crée une case
-    card.classList.add('card', (row + col) % 2 === 0 ? 'light' : 'dark'); // beige ou brun en alternance
+    card.classList.add('card', (row + col) % 2 === 0 ? 'light' : 'dark'); // blanc ou noir en alternance
     board.appendChild(card); // ajoute la case au damier
   }
 }
@@ -127,6 +130,7 @@ const MOODS = ['peureux', 'soumis', 'vaillants']; // les trois crans du curseur,
 let pawnMood = 'soumis'; // attribut choisi pour les "i" du bas, cran du milieu par défaut
 let level = 2; // niveau de l'adversaire, intermédiaire par défaut
 let levelChosen = false; // tant que faux, toutes les pièces sortent de 01-start
+let clash = null; // deux pièces opposées sur une même case, null le reste du temps
 
 /* ---------- OUTILS COMMUNS À TOUTES LES PIÈCES ---------- */
 
@@ -256,7 +260,7 @@ const AFTER_DEVIATE = 0.75; // le précédent a dévié, le suivant dévie à 75
 
 let moodRisk = null; // risque que le prochain "i" dévie, null tant que rien n'est lancé
 
-function advance(from, cases) { // avance d'autant de cases que possible, sans sauter
+function advance(from, cases, bold) { // avance d'autant de cases que possible
   const step = forward(BOTTOM); // sens d'avance du parti du bas
   const col = toCol(from); // colonne du "i", elle ne change pas
   let row = toRow(from); // ligne atteinte pour l'instant
@@ -264,7 +268,15 @@ function advance(from, cases) { // avance d'autant de cases que possible, sans s
   for (let n = 0; n < cases; n++) { // avance case par case
     const next = row + step; // ligne suivante
     if (next < 0 || next >= SIZE) break; // bord du damier atteint
-    if (!isFree(next * SIZE + col)) break; // une pièce barre la route
+
+    const target = next * SIZE + col; // case suivante
+    if (!isFree(target)) { // une pièce occupe la case
+      // Le vaillant qui déborde s'y pose quand même, sans prendre personne.
+      // Peu importe le parti de l'occupante, les deux partagent la case.
+      if (bold) row = next; // il déborde sur elle
+      break; // dans tous les cas il s'arrête ici
+    }
+
     row = next; // la case est franchie
   }
 
@@ -275,7 +287,7 @@ function advance(from, cases) { // avance d'autant de cases que possible, sans s
 function shift(from, to, distance, crans) { // dévie le coup demandé d'un nombre de crans
   const wanted = distance + crans; // longueur finalement tentée
   if (wanted <= 0) return null; // il n'avance pas du tout et perd son tour
-  return advance(from, wanted) ?? to; // avance autant que le damier le permet
+  return advance(from, wanted, crans > 0) ?? to; // seul le dépassement peut déborder
 }
 
 function moodFirst(from, to, distance) { // le premier "i" joué donne le ton
@@ -582,6 +594,25 @@ function move(from, to) { // déplace une pièce
   if (turn === TOP) setTimeout(playTop, 400); // l'algorithme joue après une pause
 }
 
+/* ---------- DÉBORDEMENT SUR UNE CASE OCCUPÉE ---------- */
+
+// Une pièce qui déborde ne prend pas celle qui l'attend : les deux partagent
+// la case, l'occupante en haut à gauche, l'arrivante en bas à droite.
+const CLASH_DELAY = 900; // attente avant l'ouverture de la page, en millisecondes
+
+function startClash(from, to) { // pose deux pièces opposées sur la même case
+  const intruder = state[from]; // pièce qui déborde
+  const defender = state[to]; // pièce déjà sur place
+
+  state[from] = null; // sa case de départ devient vide
+  clash = { index: to, intruder, defender }; // retient la confrontation
+  hasPlayed[intruder.side] = true; // ce parti a fait son premier coup
+
+  sfxr.play(PieceMove); // son de déplacement, aucune prise
+  clearSelection(); // remet à zéro et redessine
+  setTimeout(openDuel, CLASH_DELAY); // laisse voir les deux pièces sur la case
+}
+
 function skipTurn() { // le parti du bas perd son tour sans bouger
   turn = TOP; // la main passe au parti du haut
   clearSelection(); // remet à zéro et redessine
@@ -616,6 +647,7 @@ function onPlaceClick(index) { // réagit au clic sur une case
   if (legalMoves.includes(index)) { // clic sur un déplacement proposé
     const target = moodTarget(selected, index); // l'attribut peut changer le coup
     if (target === null) skipTurn(); // le "i" a eu peur, le tour est perdu
+    else if (target !== index && !isFree(target)) startClash(selected, target); // il a débordé
     else move(selected, target); // sinon le coup est joué
     return; // stoppe ici
   }
@@ -805,14 +837,15 @@ function pieceSrc(type, size, white, mood) { // chemin d'une image de pièce
   return set[size][white ? 'c-white' : 'c-black'][mood]; // taille, couleur, attribut
 }
 
-function drawPiece(place, index, piece) { // pose une pièce dans une case
+function drawPiece(place, index, piece, corner) { // pose une pièce dans une case
   const white = isWhiteSide(piece.side); // couleur de son parti
-  place.classList.add(white ? 'white' : 'black'); // sert aux pièces encore en lettres
+  if (corner === undefined) place.classList.add(white ? 'white' : 'black'); // couleur du texte
 
   const src = pieceSrc(piece.type, 'small', white, moodFolder(index, piece)); // version damier
   if (src === null) { // aucune image prévue
     const letter = document.createElement('span'); // crée la lettre
     letter.classList.add('letter'); // la place au-dessus du vignettage
+    if (corner !== undefined) letter.classList.add(corner, white ? 'white' : 'black'); // coin visé
     letter.textContent = piece.type; // affiche le nom de la pièce
     place.appendChild(letter); // pose la lettre dans la case
     return; // rien de plus à faire
@@ -820,8 +853,35 @@ function drawPiece(place, index, piece) { // pose une pièce dans une case
 
   const img = document.createElement('img'); // crée l'image
   img.src = src; // image de la bonne taille, couleur et attribut
+  if (corner !== undefined) img.classList.add(corner); // coin visé lors d'un débordement
   img.alt = piece.type; // texte de remplacement
   place.appendChild(img); // pose l'image dans la case
+}
+
+/* ---------- PAGE DE CONFRONTATION ---------- */
+
+function fillDuelSlot(slot, index, piece) { // met une pièce en grand dans un emplacement
+  const white = isWhiteSide(piece.side); // couleur de son parti
+  const src = pieceSrc(piece.type, 'big', white, moodFolder(index, piece)); // version en grand
+
+  if (src === null) { // aucune image prévue pour cette famille
+    slot.textContent = piece.type; // on retombe sur la lettre
+    slot.classList.toggle('white', white); // couleur du texte
+    slot.classList.toggle('black', !white); // couleur du texte
+    return; // rien de plus à faire
+  }
+
+  const img = document.createElement('img'); // crée l'image en grand
+  img.src = src; // image de la bonne couleur et du bon attribut
+  img.alt = piece.type; // texte de remplacement
+  slot.replaceChildren(img); // remplace le contenu de l'emplacement
+}
+
+function openDuel() { // ouvre la page qui présente les deux pièces
+  if (clash === null) return; // aucune confrontation en cours
+  fillDuelSlot(duelDefender, clash.index, clash.defender); // pièce déjà sur la case
+  fillDuelSlot(duelIntruder, clash.index, clash.intruder); // pièce qui a débordé
+  duel.classList.remove('hidden'); // la page apparaît
 }
 
 function showCard(mood) { // remplit la carte de la fenêtre de choix
@@ -847,7 +907,11 @@ function render() { // dessine la grille des pièces
     const pale = (toRow(i) + toCol(i)) % 2 === 0; // même alternance que le damier
     place.classList.add('place', pale ? 'light' : 'dark'); // retient la couleur du fond
 
-    if (piece !== null) drawPiece(place, i, piece); // pose la pièce, image ou lettre
+    if (clash !== null && clash.index === i) { // deux pièces se partagent cette case
+      place.classList.add('clash'); // règle leur placement en coin
+      drawPiece(place, i, clash.defender, 'corner-in'); // l'occupante en haut à gauche
+      drawPiece(place, i, clash.intruder, 'corner-out'); // l'arrivante en bas à droite
+    } else if (piece !== null) drawPiece(place, i, piece); // pose la pièce, image ou lettre
 
     if (i === selected) place.classList.add('selected'); // marque la case sélectionnée
     if (legalMoves.includes(i)) { // case atteignable

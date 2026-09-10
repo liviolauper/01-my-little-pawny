@@ -56,6 +56,73 @@
   pointer-events: none;
 }
 
+/* Débordement : deux pièces opposées se partagent une case, chacune dans
+   son coin. L'occupante en haut à gauche, l'arrivante en bas à droite. */
+.place.clash img,
+.place.clash .letter {
+  position: absolute;
+  z-index: 2;
+}
+
+.place.clash img {
+  height: 44px;
+  width: 44px;
+}
+
+.corner-in {
+  top: 6%;
+  left: 6%;
+}
+
+.corner-out {
+  right: 6%;
+  bottom: 6%;
+}
+
+/* Page de confrontation, les deux pièces en version "big". */
+#duel {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: start;
+  align-items: start;
+  background-color: #fff;
+}
+
+#duel.hidden {
+  display: none;
+}
+
+#duel-box {
+  display: flex;
+  align-items: center;
+  gap: 6vh;
+  padding: 4vh;
+  background-color: #000;
+}
+
+.duel-slot {
+  display: flex;
+  justify-content: start;
+  align-items: start;
+  height: 40vh;
+  width: 40vh;
+  background-color: #808080;
+}
+
+.duel-slot img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+#duel-intruder {
+  right: 0%;
+}
+
 /* Vignettage quand la pièce et son fond ont la même valeur.
    Le centre s'assombrit ou s'éclaircit, les bords gardent la couleur de la case. */
 /* Images de 16x16 fabriquées en JS, étirées à la case sans lissage :
