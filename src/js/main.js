@@ -1,3 +1,9 @@
+import { sfxr } from "jsfxr";
+
+const preset = "pickupCoin";
+const sound = sfxr.generate(preset);
+
+sfxr.play(sound);
 /* ==========================================================================
    PARTIE 1 — FONCTIONNEMENT
    Éléments du DOM, état de jeu, règles des pièces, algorithme de l'adversaire,
