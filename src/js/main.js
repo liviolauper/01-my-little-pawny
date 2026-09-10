@@ -2,8 +2,6 @@ import { sfxr } from "jsfxr";
 
 const preset = "pickupCoin";
 const sound = sfxr.generate(preset);
-
-sfxr.play(sound);
 /* ==========================================================================
    PARTIE 1 — FONCTIONNEMENT
    Éléments du DOM, état de jeu, règles des pièces, algorithme de l'adversaire,
@@ -519,6 +517,7 @@ function move(from, to) { // déplace une pièce
   state[from] = null; // sa case de départ devient vide
   hasPlayed[side] = true; // ce parti a fait son premier coup
   turn = side === TOP ? BOTTOM : TOP; // la main passe à l'autre parti
+  sfxr.play(sound); // joue son unique pour tout déplacement
   clearSelection(); // remet à zéro et redessine
   if (turn === TOP) setTimeout(playTop, 400); // l'algorithme joue après une pause
 }
