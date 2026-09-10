@@ -1,7 +1,35 @@
 import { sfxr } from "jsfxr";
 
-const preset = "pickupCoin";
-const sound = sfxr.generate(preset);
+/* BIBLIOTHÈQUE DE SONS */
+const PieceMove = {
+  "oldParams": true,
+  "wave_type": 1,
+  "p_env_attack": 0,
+  "p_env_sustain": 0.18097412358211817,
+  "p_env_punch": 0.6144211579088138,
+  "p_env_decay": 0.5072782827425126,
+  "p_base_freq": 0.125,
+  "p_freq_limit": 0,
+  "p_freq_ramp": 0.178,
+  "p_freq_dramp": -0.028,
+  "p_vib_strength": 0,
+  "p_vib_speed": 0,
+  "p_arp_mod": 0,
+  "p_arp_speed": 0.589990290139025,
+  "p_duty": 0.6245459008607657,
+  "p_duty_ramp": 0.5145240583011941,
+  "p_repeat_speed": 0,
+  "p_pha_offset": 0,
+  "p_pha_ramp": 0,
+  "p_lpf_freq": 1,
+  "p_lpf_ramp": -0.473,
+  "p_lpf_resonance": 0.8804858607723413,
+  "p_hpf_freq": 0.846,
+  "p_hpf_ramp": 0,
+  "sound_vol": 0.25,
+  "sample_rate": 44100,
+  "sample_size": 8
+};
 /* ==========================================================================
    PARTIE 1 — FONCTIONNEMENT
    Éléments du DOM, état de jeu, règles des pièces, algorithme de l'adversaire,
@@ -517,7 +545,7 @@ function move(from, to) { // déplace une pièce
   state[from] = null; // sa case de départ devient vide
   hasPlayed[side] = true; // ce parti a fait son premier coup
   turn = side === TOP ? BOTTOM : TOP; // la main passe à l'autre parti
-  sfxr.play(sound); // joue son unique pour tout déplacement
+  sfxr.play(PieceMove); // son unique pour tout déplacement
   clearSelection(); // remet à zéro et redessine
   if (turn === TOP) setTimeout(playTop, 400); // l'algorithme joue après une pause
 }
