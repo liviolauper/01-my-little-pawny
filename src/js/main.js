@@ -30,6 +30,35 @@ const PieceMove = {
   "sample_rate": 44100,
   "sample_size": 8
 };
+const PieceDeath = {
+  "oldParams": true,
+  "wave_type": 2,
+  "p_env_attack": 0.709,
+  "p_env_sustain": 0.6641,
+  "p_env_punch": 0,
+  "p_env_decay": 0,
+  "p_base_freq": 0.258,
+  "p_freq_limit": 0,
+  "p_freq_ramp": -0.172,
+  "p_freq_dramp": 0,
+  "p_vib_strength": 0,
+  "p_vib_speed": 0,
+  "p_arp_mod": 0,
+  "p_arp_speed": 0,
+  "p_duty": 0,
+  "p_duty_ramp": 0,
+  "p_repeat_speed": 0,
+  "p_pha_offset": 0,
+  "p_pha_ramp": 0,
+  "p_lpf_freq": 0.548,
+  "p_lpf_ramp": 0,
+  "p_lpf_resonance": 0,
+  "p_hpf_freq": 0,
+  "p_hpf_ramp": 0,
+  "sound_vol": 1,
+  "sample_rate": 44100,
+  "sample_size": 8
+};
 
 /* ==========================================================================
    PARTIE 1 — FONCTIONNEMENT
@@ -541,12 +570,14 @@ function bestMove(side) { // choisit le coup du parti dirigé par l'algorithme
 
 function move(from, to) { // déplace une pièce
   const side = state[from].side; // parti qui joue ce coup
-  if (!isFree(to)) captured[side].push(state[to]); // pièce adverse présente, elle est prise
+  const taken = !isFree(to); // une pièce adverse occupe la case visée
+  if (taken) captured[side].push(state[to]); // elle est prise
   state[to] = state[from]; // la pièce arrive sur la case visée
   state[from] = null; // sa case de départ devient vide
   hasPlayed[side] = true; // ce parti a fait son premier coup
   turn = side === TOP ? BOTTOM : TOP; // la main passe à l'autre parti
   sfxr.play(PieceMove); // son unique pour tout déplacement
+  if (taken) sfxr.play(PieceDeath); // son si pièce prise
   clearSelection(); // remet à zéro et redessine
   if (turn === TOP) setTimeout(playTop, 400); // l'algorithme joue après une pause
 }
