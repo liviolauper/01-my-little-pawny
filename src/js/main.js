@@ -86,6 +86,7 @@ const pixelGrow = document.querySelector('#pixel-grow'); // récupère l'épaiss
 const duel = document.querySelector('#duel'); // récupère la page de confrontation
 const duelDefender = document.querySelector('#duel-defender'); // emplacement de l'occupante
 const duelIntruder = document.querySelector('#duel-intruder'); // emplacement de l'arrivante
+const duelCase = document.querySelector('#duel-case'); // image de la case du duel
 
 /* ---------- DAMIER ---------- */
 
@@ -877,8 +878,18 @@ function fillDuelSlot(slot, index, piece) { // met une pièce en grand dans un e
   slot.replaceChildren(img); // remplace le contenu de l'emplacement
 }
 
+// Image de la case sur laquelle se joue le duel, selon sa couleur de fond.
+const DUEL_CASES = {
+  white: new URL('../img/02-duel/a-case/white.png', import.meta.url).href, // case blanche
+  black: new URL('../img/02-duel/a-case/black.png', import.meta.url).href, // case noire
+};
+
 function openDuel() { // ouvre la page qui présente les deux pièces
   if (clash === null) return; // aucune confrontation en cours
+
+  const pale = (toRow(clash.index) + toCol(clash.index)) % 2 === 0; // même alternance que le damier
+  duelCase.src = pale ? DUEL_CASES.black : DUEL_CASES.white; // la case garde sa couleur
+
   fillDuelSlot(duelDefender, clash.index, clash.defender); // pièce déjà sur la case
   fillDuelSlot(duelIntruder, clash.index, clash.intruder); // pièce qui a débordé
   duel.classList.remove('hidden'); // la page apparaît

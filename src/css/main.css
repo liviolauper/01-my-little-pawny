@@ -79,27 +79,89 @@
   bottom: 6%;
 }
 
-/* Page de confrontation, les deux pièces en version "big". */
+/* Page de confrontation. #duel ne sert que de conteneur : il répartit les
+   trois éléments, sans habillage propre. */
 #duel {
   position: fixed;
   inset: 0;
   z-index: 30;
   display: flex;
-  justify-content: start;
-  align-items: start;
-  background-color: #fff;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2vh;
+  padding: 4vh;
+  background-color: #808080;
 }
 
 #duel.hidden {
   display: none;
 }
 
-#duel-box {
+/* Un camp par pièce : la réplique au-dessus, la boîte en dessous.
+   La réplique est hors du flux, elle ne dicte donc aucune largeur. */
+.duel-side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Image de la case où se joue le duel, au centre du viewport.
+   Hors du flux : les deux camps se répartissent comme si elle n'existait pas. */
+#duel-case {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 32;
+  width: 70vh;
+  object-fit: contain;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* Une boîte par pièce, réglable séparément. */
+.duel-box {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6vh;
   padding: 4vh;
   background-color: #000;
+}
+
+/* Réglages propres à chaque boîte : #duel-box-defender, #duel-box-intruder. */
+
+/* Habillage commun aux deux répliques : hors du flux, au-dessus de leur boîte,
+   sans fond, simple contour, sur une seule ligne. */
+.duel-line {
+  position: absolute;
+  bottom: calc(100% + 4vh);
+  overflow: hidden;
+  padding: 1.5vh;
+  border: 0.3vh solid #fff;
+  font-size: 2.2vh;
+  color: #fff;
+  white-space: nowrap;
+  animation: unroll 0.8s ease-out forwards;
+}
+
+/* Réplique de l'occupante, camp de gauche. */
+#duel-line-defender {
+  left: 0;
+}
+
+/* Réplique de l'arrivante, camp de droite. */
+#duel-line-intruder {
+  right: 0;
+}
+
+@keyframes unroll {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
 }
 
 .duel-slot {
@@ -119,9 +181,6 @@
   image-rendering: pixelated;
 }
 
-#duel-intruder {
-  right: 0%;
-}
 
 /* Vignettage quand la pièce et son fond ont la même valeur.
    Le centre s'assombrit ou s'éclaircit, les bords gardent la couleur de la case. */
