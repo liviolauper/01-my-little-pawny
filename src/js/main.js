@@ -30,6 +30,7 @@ const PieceMove = {
   "sample_rate": 44100,
   "sample_size": 8
 };
+
 /* ==========================================================================
    PARTIE 1 — FONCTIONNEMENT
    Éléments du DOM, état de jeu, règles des pièces, algorithme de l'adversaire,
