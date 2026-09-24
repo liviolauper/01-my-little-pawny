@@ -791,7 +791,7 @@ const MOOD_FOLDERS = {
 // Le vignettage est dessiné dans une image de 16x16 pixels, comme les pièces.
 // Étirée à la taille d'une case, elle montre les mêmes gros pixels.
 const VIGNETTE_SIZE = 16; // côté de l'image, en pixels
-const VIGNETTE_REACH = 0.7; // portée du dégradé, en part du côté
+const VIGNETTE_REACH = 0.6; // portée du dégradé, en part du côté
 
 function makeVignette(red, green, blue, alpha) { // fabrique une image de vignettage
   const canvas = document.createElement('canvas'); // support de dessin
@@ -811,8 +811,8 @@ function makeVignette(red, green, blue, alpha) { // fabrique une image de vignet
 
 function setVignettes() { // met les deux vignettages à disposition du CSS
   const root = document.documentElement.style; // variables du document
-  root.setProperty('--vignette-dark', makeVignette(0, 0, 0, 0.5)); // centre sombre
-  root.setProperty('--vignette-light', makeVignette(255, 255, 255, 0.25)); // centre clair
+  root.setProperty('--vignette-dark', makeVignette(0, 0, 0, 0.6)); // centre sombre
+  root.setProperty('--vignette-light', makeVignette(255, 255, 255, 0.2)); // centre clair
 }
 
 /* ---------- CHOIX DE L'IMAGE D'UNE PIÈCE ---------- */
