@@ -754,26 +754,26 @@ const IMAGES = {
   i: { // le pion
     small: { // version damier
       'c-white': {
-        weak: new URL('../img/00-pieces/1-small/c-white/weak/i.png', import.meta.url).href,
+        weak: new URL('../img/01-pieces/1-small/c-white/weak/i.png', import.meta.url).href,
         neutral: new URL('../img/01-start/1-small/c-white/i.png', import.meta.url).href,
-        strong: new URL('../img/00-pieces/1-small/c-white/strong/i.png', import.meta.url).href,
+        strong: new URL('../img/01-pieces/1-small/c-white/strong/i.png', import.meta.url).href,
       },
       'c-black': {
-        weak: new URL('../img/00-pieces/1-small/c-black/weak/i.png', import.meta.url).href,
+        weak: new URL('../img/01-pieces/1-small/c-black/weak/i.png', import.meta.url).href,
         neutral: new URL('../img/01-start/1-small/c-black/i.png', import.meta.url).href,
-        strong: new URL('../img/00-pieces/1-small/c-black/strong/i.png', import.meta.url).href,
+        strong: new URL('../img/01-pieces/1-small/c-black/strong/i.png', import.meta.url).href,
       },
     },
     big: { // version en grand
       'c-white': {
-        weak: new URL('../img/00-pieces/0-big/c-white/weak/i.png', import.meta.url).href,
+        weak: new URL('../img/01-pieces/0-big/c-white/weak/i.png', import.meta.url).href,
         neutral: new URL('../img/01-start/0-big/c-white/i.png', import.meta.url).href,
-        strong: new URL('../img/00-pieces/0-big/c-white/strong/i.png', import.meta.url).href,
+        strong: new URL('../img/01-pieces/0-big/c-white/strong/i.png', import.meta.url).href,
       },
       'c-black': {
-        weak: new URL('../img/00-pieces/0-big/c-black/weak/i.png', import.meta.url).href,
+        weak: new URL('../img/01-pieces/0-big/c-black/weak/i.png', import.meta.url).href,
         neutral: new URL('../img/01-start/0-big/c-black/i.png', import.meta.url).href,
-        strong: new URL('../img/00-pieces/0-big/c-black/strong/i.png', import.meta.url).href,
+        strong: new URL('../img/01-pieces/0-big/c-black/strong/i.png', import.meta.url).href,
       },
     },
   },
