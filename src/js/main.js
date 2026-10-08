@@ -1,5 +1,15 @@
 import { sfxr } from "jsfxr";
 
+// Toutes les listes fixes du jeu sont rangées à part, dans arrays.js.
+import {
+  pieces,
+  MOODS,
+  STRAIGHT,
+  DIAGONAL,
+  KNIGHT_JUMPS,
+  TABLES,
+} from './arrays.js';
+
 /* BIBLIOTHÈQUE DE SONS */
 const PieceMove = {
   "oldParams": true,
@@ -102,15 +112,6 @@ for (let row = 0; row < SIZE; row++) { // parcourt chaque ligne
 
 /* ---------- PARTIS ET ÉTAT DE JEU ---------- */
 
-const pieces = [ // disposition de départ, une lettre par case
-  'T', 'L', 'W', 'cuk', 'L', 'T',
-  'i', 'i', 'i', 'i', 'i', 'i',
-  '',  '',  '',  '',  '',  '',
-  '',  '',  '',  '',  '',  '',
-  'i', 'i', 'i', 'i', 'i', 'i',
-  'T', 'L', 'W', 'cuk', 'L', 'T',
-];
-
 const TOP = 'top'; // nom du parti du haut
 const BOTTOM = 'bottom'; // nom du parti du bas
 
@@ -127,21 +128,11 @@ let turn = topIsWhite ? TOP : BOTTOM; // le parti blanc commence
 let started = false; // la partie n'a pas encore commencé
 const hasPlayed = { top: false, bottom: false }; // dit si un parti a déjà joué
 const captured = { top: [], bottom: [] }; // pièces prises par chaque parti
-const MOODS = ['peureux', 'soumis', 'vaillants']; // les trois crans du curseur, dans l'ordre
 let pawnMood = 'soumis'; // attribut choisi pour les "i" du bas, cran du milieu par défaut
 let level = 2; // niveau de l'adversaire, intermédiaire par défaut
-let levelChosen = false; // tant que faux, toutes les pièces sortent de 01-start
 let clash = null; // deux pièces opposées sur une même case, null le reste du temps
 
 /* ---------- OUTILS COMMUNS À TOUTES LES PIÈCES ---------- */
-
-const STRAIGHT = [ // les 4 directions droites, en [ligne, colonne]
-  [-1, 0], [1, 0], [0, -1], [0, 1],
-];
-
-const DIAGONAL = [ // les 4 diagonales, en [ligne, colonne]
-  [-1, -1], [-1, 1], [1, -1], [1, 1],
-];
 
 function toRow(index) { // numéro de ligne d'une case
   return Math.floor(index / SIZE); // division entière par la largeur
@@ -335,11 +326,6 @@ function moodTarget(from, to) { // ajuste le coup selon l'attribut choisi
 
 /* ---------- PIÈCE "L" : LE CAVALIER ---------- */
 
-const KNIGHT_JUMPS = [ // les 8 sauts en L, en [ligne, colonne]
-  [-2, -1], [-2, 1], [-1, -2], [-1, 2],
-  [1, -2], [1, 2], [2, -1], [2, 1],
-];
-
 function movesForKnight(index, piece) { // déplacements possibles d'un "L"
   return steps(index, piece, KNIGHT_JUMPS); // il saute, seule l'arrivée compte
 }
@@ -402,51 +388,6 @@ const VALUES = { // valeur brute de chaque pièce, en centièmes de "i"
   T: 500, // la tour
   W: 900, // la reine
   cuk: 20000, // le roi, perdre le sien coûte la partie
-};
-
-// Tables de position taillées pour 6x6, écrites du point de vue du parti du bas.
-// La première ligne est le fond adverse, la dernière est son propre fond.
-const TABLES = {
-  i: [ // le "i" gagne à avancer et à tenir le centre
-    90, 90, 90, 90, 90, 90,
-    40, 45, 50, 50, 45, 40,
-    15, 20, 30, 30, 20, 15,
-     5, 10, 20, 20, 10,  5,
-     0,  0,  5,  5,  0,  0,
-     0,  0,  0,  0,  0,  0,
-  ],
-  L: [ // le "L" perd sa force sur les bords
-    -40, -20, -10, -10, -20, -40,
-    -20,   0,  10,  10,   0, -20,
-    -10,  10,  20,  20,  10, -10,
-    -10,  10,  20,  20,  10, -10,
-    -20,   0,  10,  10,   0, -20,
-    -40, -20, -10, -10, -20, -40,
-  ],
-  T: [ // le "T" aime les lignes avancées
-     5, 10, 10, 10, 10,  5,
-     5, 10, 10, 10, 10,  5,
-     0,  0,  0,  0,  0,  0,
-     0,  0,  0,  0,  0,  0,
-    -5,  0,  0,  5,  5, -5,
-     0,  0,  0,  5,  5,  0,
-  ],
-  W: [ // le "W" préfère le centre sans trop s'exposer
-    -20, -10, -5, -5, -10, -20,
-    -10,   0,  5,  5,   0, -10,
-     -5,   5, 10, 10,   5,  -5,
-     -5,   5, 10, 10,   5,  -5,
-    -10,   0,  5,  5,   0, -10,
-    -20, -10, -5, -5, -10, -20,
-  ],
-  cuk: [ // le "cuk" reste à l'abri au fond
-    -30, -40, -40, -40, -40, -30,
-    -30, -40, -40, -40, -40, -30,
-    -20, -30, -30, -30, -30, -20,
-    -10, -20, -20, -20, -20, -10,
-     10,  10,   0,   0,  10,  10,
-     20,  30,  10,  10,  30,  20,
-  ],
 };
 
 function other(side) { // parti adverse
@@ -705,8 +646,6 @@ function openSetup() { // affiche la pop-up de choix du niveau
 function onLevel() { // réagit au changement de difficulté
   if (started) return; // partie déjà lancée, le niveau est figé
   level = Number(levelSelect.value); // retient le niveau de l'adversaire
-  levelChosen = true; // les pièces quittent 01-start
-  render(); // redessine les "i" selon ce niveau
 }
 
 function onStart() { // montre les pièces concernées au clic du bouton
@@ -777,6 +716,32 @@ const IMAGES = {
       },
     },
   },
+  T: { // la tour
+    small: { // version damier
+      'c-white': {
+        weak: new URL('../img/0-white/0-small/b-weak/t.png', import.meta.url).href,
+        neutral: new URL('../img/0-white/0-small/a-start/t.png', import.meta.url).href,
+        strong: new URL('../img/0-white/0-small/b-strong/t.png', import.meta.url).href,
+      },
+      'c-black': {
+        weak: new URL('../img/0-black/0-small/b-weak/t.png', import.meta.url).href,
+        neutral: new URL('../img/0-black/0-small/a-start/t.png', import.meta.url).href,
+        strong: new URL('../img/0-black/0-small/b-strong/t.png', import.meta.url).href,
+      },
+    },
+    big: { // version en grand
+      'c-white': {
+        weak: new URL('../img/0-white/1-big/b-weak/t.png', import.meta.url).href,
+        neutral: new URL('../img/0-white/1-big/a-start/t.png', import.meta.url).href,
+        strong: new URL('../img/0-white/1-big/b-strong/t.png', import.meta.url).href,
+      },
+      'c-black': {
+        weak: new URL('../img/0-black/1-big/b-weak/t.png', import.meta.url).href,
+        neutral: new URL('../img/0-black/1-big/a-start/t.png', import.meta.url).href,
+        strong: new URL('../img/0-black/1-big/b-strong/t.png', import.meta.url).href,
+      },
+    },
+  },
 };
 
 // Chaque attribut pointe vers un jeu d'images.
@@ -817,19 +782,13 @@ function setVignettes() { // met les deux vignettages à disposition du CSS
 
 /* ---------- CHOIX DE L'IMAGE D'UNE PIÈCE ---------- */
 
-const WEAK_COLUMNS = [1, 3]; // deuxième et quatrième colonne, où le niveau 2 reste faible
-
 function isWhiteSide(side) { // dit si un parti est blanc
   return side === TOP ? topIsWhite : !topIsWhite; // le bas a toujours la couleur opposée
 }
 
-function moodFolder(index, piece) { // dossier d'attribut d'une pièce
-  if (!levelChosen) return 'neutral'; // aucun niveau choisi, tout le monde sort de 01-start
-  if (piece.side === BOTTOM) return MOOD_FOLDERS[pawnMood]; // le bas suit le curseur du joueur
-
-  if (level === 1) return 'weak'; // débutant, tout le parti est faible
-  if (level === 3) return 'strong'; // professionnel, tout le parti est fort
-  return WEAK_COLUMNS.includes(toCol(index)) ? 'weak' : 'strong'; // intermédiaire, deux colonnes faibles
+function moodFolder(piece) { // dossier d'attribut d'une pièce
+  if (piece.side === TOP) return 'neutral'; // le haut garde toujours les images de "a-start"
+  return MOOD_FOLDERS[pawnMood]; // le bas suit le curseur du joueur
 }
 
 function pieceSrc(type, size, white, mood) { // chemin d'une image de pièce
@@ -842,7 +801,7 @@ function drawPiece(place, index, piece, corner) { // pose une pièce dans une ca
   const white = isWhiteSide(piece.side); // couleur de son parti
   if (corner === undefined) place.classList.add(white ? 'white' : 'black'); // couleur du texte
 
-  const src = pieceSrc(piece.type, 'small', white, moodFolder(index, piece)); // version damier
+  const src = pieceSrc(piece.type, 'small', white, moodFolder(piece)); // version damier
   if (src === null) { // aucune image prévue
     const letter = document.createElement('span'); // crée la lettre
     letter.classList.add('letter'); // la place au-dessus du vignettage
@@ -863,7 +822,7 @@ function drawPiece(place, index, piece, corner) { // pose une pièce dans une ca
 
 function fillDuelSlot(slot, index, piece) { // met une pièce en grand dans un emplacement
   const white = isWhiteSide(piece.side); // couleur de son parti
-  const src = pieceSrc(piece.type, 'big', white, moodFolder(index, piece)); // version en grand
+  const src = pieceSrc(piece.type, 'big', white, moodFolder(piece)); // version en grand
 
   if (src === null) { // aucune image prévue pour cette famille
     slot.textContent = piece.type; // on retombe sur la lettre
