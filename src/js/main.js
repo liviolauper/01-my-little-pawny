@@ -754,26 +754,26 @@ const IMAGES = {
   i: { // le pion
     small: { // version damier
       'c-white': {
-        weak: new URL('../img/01-pieces/1-small/c-white/weak/i.png', import.meta.url).href,
-        neutral: new URL('../img/01-start/1-small/c-white/i.png', import.meta.url).href,
-        strong: new URL('../img/01-pieces/1-small/c-white/strong/i.png', import.meta.url).href,
+        weak: new URL('../img/0-white/0-small/b-weak/i.png', import.meta.url).href,
+        neutral: new URL('../img/0-white/0-small/a-start/i.png', import.meta.url).href,
+        strong: new URL('../img/0-white/0-small/b-strong/i.png', import.meta.url).href,
       },
       'c-black': {
-        weak: new URL('../img/01-pieces/1-small/c-black/weak/i.png', import.meta.url).href,
-        neutral: new URL('../img/01-start/1-small/c-black/i.png', import.meta.url).href,
-        strong: new URL('../img/01-pieces/1-small/c-black/strong/i.png', import.meta.url).href,
+        weak: new URL('../img/0-black/0-small/b-weak/i.png', import.meta.url).href,
+        neutral: new URL('../img/0-black/0-small/a-start/i.png', import.meta.url).href,
+        strong: new URL('../img/0-black/0-small/b-strong/i.png', import.meta.url).href,
       },
     },
     big: { // version en grand
       'c-white': {
-        weak: new URL('../img/01-pieces/0-big/c-white/weak/i.png', import.meta.url).href,
-        neutral: new URL('../img/01-start/0-big/c-white/i.png', import.meta.url).href,
-        strong: new URL('../img/01-pieces/0-big/c-white/strong/i.png', import.meta.url).href,
+        weak: new URL('../img/0-white/1-big/b-weak/i.png', import.meta.url).href,
+        neutral: new URL('../img/0-white/1-big/a-start/i.png', import.meta.url).href,
+        strong: new URL('../img/0-white/1-big/b-strong/i.png', import.meta.url).href,
       },
       'c-black': {
-        weak: new URL('../img/01-pieces/0-big/c-black/weak/i.png', import.meta.url).href,
-        neutral: new URL('../img/01-start/0-big/c-black/i.png', import.meta.url).href,
-        strong: new URL('../img/01-pieces/0-big/c-black/strong/i.png', import.meta.url).href,
+        weak: new URL('../img/0-black/1-big/b-weak/i.png', import.meta.url).href,
+        neutral: new URL('../img/0-black/1-big/a-start/i.png', import.meta.url).href,
+        strong: new URL('../img/0-black/1-big/b-strong/i.png', import.meta.url).href,
       },
     },
   },
@@ -788,15 +788,15 @@ const MOOD_FOLDERS = {
 
 /* ---------- VIGNETTAGE DES CASES ---------- */
 
-// Le vignettage est dessiné dans une image de 16x16 pixels, comme les pièces.
+// Le vignettage est dessiné dans une image de 16x32 pixels, comme les pièces.
 // Étirée à la taille d'une case, elle montre les mêmes gros pixels.
-const VIGNETTE_SIZE = 16; // côté de l'image, en pixels
+const VIGNETTE_SIZE = 32; // côté de l'image, en pixels
 const VIGNETTE_REACH = 0.6; // portée du dégradé, en part du côté
 
 function makeVignette(red, green, blue, alpha) { // fabrique une image de vignettage
   const canvas = document.createElement('canvas'); // support de dessin
-  canvas.height = VIGNETTE_SIZE; // 16 pixels de haut
-  canvas.width = VIGNETTE_SIZE; // 16 pixels de large
+  canvas.height = VIGNETTE_SIZE; // 32 pixels de haut
+  canvas.width = VIGNETTE_SIZE; // 32 pixels de large
 
   const middle = VIGNETTE_SIZE / 2; // centre de l'image
   const context = canvas.getContext('2d'); // outil de dessin
@@ -880,8 +880,8 @@ function fillDuelSlot(slot, index, piece) { // met une pièce en grand dans un e
 
 // Image de la case sur laquelle se joue le duel, selon sa couleur de fond.
 const DUEL_CASES = {
-  white: new URL('../img/02-duel/a-case/white.png', import.meta.url).href, // case blanche
-  black: new URL('../img/02-duel/a-case/black.png', import.meta.url).href, // case noire
+  white: new URL('../img/0-white/2-duel-layouts/a-case.png', import.meta.url).href, // case blanche
+  black: new URL('../img/0-black/2-duel-layouts/a-case.png', import.meta.url).href, // case noire
 };
 
 function openDuel() { // ouvre la page qui présente les deux pièces
