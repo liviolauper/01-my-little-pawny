@@ -90,7 +90,11 @@
   align-items: center;
   gap: 2vh;
   padding: 4vh;
-  background-color: #808080;
+  background-image: url('../img/bg-duel.png');
+  background-repeat: no-repeat;
+  background-size: 100vw 40vh;
+  background-position: 0 550px;
+  background-color:#000;
 }
 
 #duel.hidden {
@@ -110,11 +114,11 @@
    Hors du flux : les deux camps se répartissent comme si elle n'existait pas. */
 #duel-case {
   position: absolute;
-  top: 50%;
+  top: 80%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 32;
-  width: 70vh;
+  z-index: -10;
+  width: 120vh;
   object-fit: contain;
   image-rendering: crisp-edges;
   image-rendering: pixelated;
@@ -124,8 +128,7 @@
 .duel-box {
   position: relative;
   display: flex;
-  align-items: center;
-  padding: 4vh;
+  border: #fff 2px solid;
   background-color: #000;
 }
 
@@ -168,9 +171,9 @@
   display: flex;
   justify-content: start;
   align-items: start;
-  height: 40vh;
-  width: 40vh;
-  background-color: #808080;
+  height: 35vh;
+  width: 35vh;
+  background-color: #000;
 }
 
 .duel-slot img {
@@ -432,6 +435,16 @@ select {
   background: #000;
   border: #fff 2px solid;
   color: #fff;
+}
+
+button, select, option, html {
+  font-family: "lores-15", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+input[type='range'] {
+  background-color:#fff;
 }
 
 * {

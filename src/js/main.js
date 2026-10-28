@@ -605,7 +605,7 @@ function onPlaceClick(index) { // réagit au clic sur une case
 
 /* ---------- FLOU ET PIXELISATION DE L'ARRIVÉE ---------- */
 
-const PIXEL_MAX = 44; // côté des plus gros blocs, en pixels
+const PIXEL_MAX = 20; // côté des plus gros blocs, en pixels
 const BLUR_MAX = 4; // flou le plus épais, en vh
 const CLEAR_TIME = 1000; // durée du retour à la netteté, en millisecondes
 
