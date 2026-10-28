@@ -277,7 +277,8 @@
   pointer-events: none;
   font-size: 9vh;
   font-weight: bold;
-  color: #fff;
+  color: #000;
+  -webkit-text-stroke: 1px #fff;
 }
 
 #intro.done {
