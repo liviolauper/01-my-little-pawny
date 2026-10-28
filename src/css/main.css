@@ -428,6 +428,12 @@
   cursor: pointer;
 }
 
+select {
+  background: #000;
+  border: #fff 2px solid;
+  color: #fff;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
