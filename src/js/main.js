@@ -742,6 +742,60 @@ const IMAGES = {
       },
     },
   },
+  L: { // le cavalier
+    small: { // version damier
+      'c-white': {
+        neutral: new URL('../img/0-white/0-small/a-start/l.png', import.meta.url).href,
+      },
+      'c-black': {
+        neutral: new URL('../img/0-black/0-small/a-start/l.png', import.meta.url).href,
+      },
+    },
+    big: { // version en grand
+      'c-white': {
+        neutral: new URL('../img/0-white/1-big/a-start/l.png', import.meta.url).href,
+      },
+      'c-black': {
+        neutral: new URL('../img/0-black/1-big/a-start/l.png', import.meta.url).href,
+      },
+    },
+  },
+  W: { // la reine
+    small: { // version damier
+      'c-white': {
+        neutral: new URL('../img/0-white/0-small/a-start/w.png', import.meta.url).href,
+      },
+      'c-black': {
+        neutral: new URL('../img/0-black/0-small/a-start/w.png', import.meta.url).href,
+      },
+    },
+    big: { // version en grand
+      'c-white': {
+        neutral: new URL('../img/0-white/1-big/a-start/w.png', import.meta.url).href,
+      },
+      'c-black': {
+        neutral: new URL('../img/0-black/1-big/a-start/w.png', import.meta.url).href,
+      },
+    },
+  },
+  cuk: { // le roi
+    small: { // version damier
+      'c-white': {
+        neutral: new URL('../img/0-white/0-small/a-start/cuk.png', import.meta.url).href,
+      },
+      'c-black': {
+        neutral: new URL('../img/0-black/0-small/a-start/cuk.png', import.meta.url).href,
+      },
+    },
+    big: { // version en grand
+      'c-white': {
+        neutral: new URL('../img/0-white/1-big/a-start/cuk.png', import.meta.url).href,
+      },
+      'c-black': {
+        neutral: new URL('../img/0-black/1-big/a-start/cuk.png', import.meta.url).href,
+      },
+    },
+  },
 };
 
 // Chaque attribut pointe vers un jeu d'images.
