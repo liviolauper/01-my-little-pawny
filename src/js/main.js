@@ -842,7 +842,8 @@ function isWhiteSide(side) { // dit si un parti est blanc
 
 function moodFolder(piece) { // dossier d'attribut d'une pièce
   if (piece.side === TOP) return 'neutral'; // le haut garde toujours les images de "a-start"
-  return MOOD_FOLDERS[pawnMood]; // le bas suit le curseur du joueur
+  if (piece.type !== 'i') return 'neutral'; // seuls les "i" du bas portent un caractère
+  return MOOD_FOLDERS[pawnMood]; // les "i" du bas suivent le curseur du joueur
 }
 
 function pieceSrc(type, size, white, mood) { // chemin d'une image de pièce

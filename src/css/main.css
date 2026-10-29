@@ -201,7 +201,7 @@
 
 /* Small : contour de 1 pixel d'image. */
 .place img {
-  --art: 2px; /* image de 32 px affichée en 64 px */
+  --art: 1px; /* image de 32 px affichée en 64 px */
   filter:
     drop-shadow(var(--art) 0 0 var(--outline))
     drop-shadow(calc(-1 * var(--art)) 0 0 var(--outline))
