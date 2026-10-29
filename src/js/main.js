@@ -867,6 +867,7 @@ function drawPiece(place, index, piece, corner) { // pose une pièce dans une ca
 
   const img = document.createElement('img'); // crée l'image
   img.src = src; // image de la bonne taille, couleur et attribut
+  img.classList.add(white ? 'piece-white' : 'piece-black'); // choisit la couleur du contour
   if (corner !== undefined) img.classList.add(corner); // coin visé lors d'un débordement
   img.alt = piece.type; // texte de remplacement
   place.appendChild(img); // pose l'image dans la case
@@ -887,6 +888,7 @@ function fillDuelSlot(slot, index, piece) { // met une pièce en grand dans un e
 
   const img = document.createElement('img'); // crée l'image en grand
   img.src = src; // image de la bonne couleur et du bon attribut
+  img.classList.add(white ? 'piece-white' : 'piece-black'); // choisit la couleur du contour
   img.alt = piece.type; // texte de remplacement
   slot.replaceChildren(img); // remplace le contenu de l'emplacement
 }
@@ -910,7 +912,9 @@ function openDuel() { // ouvre la page qui présente les deux pièces
 
 function showCard(mood) { // remplit la carte de la fenêtre de choix
   const img = document.createElement('img'); // crée l'image en grand
-  img.src = pieceSrc('i', 'big', isWhiteSide(BOTTOM), MOOD_FOLDERS[mood]); // "i" du joueur en grand
+  const white = isWhiteSide(BOTTOM); // couleur du parti du joueur
+  img.src = pieceSrc('i', 'big', white, MOOD_FOLDERS[mood]); // "i" du joueur en grand
+  img.classList.add(white ? 'piece-white' : 'piece-black'); // choisit la couleur du contour
   img.alt = 'i'; // texte de remplacement
   card.replaceChildren(img); // remplace le contenu de la carte
 }

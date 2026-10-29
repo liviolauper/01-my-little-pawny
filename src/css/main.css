@@ -184,6 +184,57 @@
   image-rendering: pixelated;
 }
 
+/* ---------- CONTOUR DES PIÈCES ---------- */
+
+/* Le contour épouse les pixels opaques de chaque image, jamais son cadre.
+   Une drop-shadow sans flou recopie la silhouette décalée d'un pixel ;
+   enchaînées droite, gauche, bas, haut, elles l'épaississent tout autour.
+   --art : taille à l'écran d'un pixel de l'image, à garder en phase avec
+   les dimensions d'affichage. */
+.piece-white {
+  --outline: #000000; /* pièce blanche, contour noir */
+}
+
+.piece-black {
+  --outline: #ffffff; /* pièce noire, contour blanc */
+}
+
+/* Small : contour de 1 pixel d'image. */
+.place img {
+  --art: 2px; /* image de 32 px affichée en 64 px */
+  filter:
+    drop-shadow(var(--art) 0 0 var(--outline))
+    drop-shadow(calc(-1 * var(--art)) 0 0 var(--outline))
+    drop-shadow(0 var(--art) 0 var(--outline))
+    drop-shadow(0 calc(-1 * var(--art)) 0 var(--outline));
+}
+
+.place.clash img {
+  --art: calc(44px / 32); /* image de 32 px affichée en 44 px */
+}
+
+/* Big : contour de 2 pixels d'image, même enchaînement répété deux fois. */
+.duel-slot img,
+#popup-card img {
+  filter:
+    drop-shadow(var(--art) 0 0 var(--outline))
+    drop-shadow(calc(-1 * var(--art)) 0 0 var(--outline))
+    drop-shadow(var(--art) 0 0 var(--outline))
+    drop-shadow(calc(-1 * var(--art)) 0 0 var(--outline))
+    drop-shadow(0 var(--art) 0 var(--outline))
+    drop-shadow(0 calc(-1 * var(--art)) 0 var(--outline))
+    drop-shadow(0 var(--art) 0 var(--outline))
+    drop-shadow(0 calc(-1 * var(--art)) 0 var(--outline));
+}
+
+.duel-slot img {
+  --art: calc(35vh / 128); /* image de 128 px affichée en 35vh */
+}
+
+#popup-card img {
+  --art: calc(40vh / 128); /* image de 128 px affichée en 40vh */
+}
+
 
 /* Vignettage quand la pièce et son fond ont la même valeur.
    Le centre s'assombrit ou s'éclaircit, les bords gardent la couleur de la case. */
