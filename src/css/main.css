@@ -256,10 +256,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url('../img/bg-plank.png');
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
+  /* Deux calques : la planche devant, les tuiles derrière. Tout le fond vit
+     dans #stage pour que le flou de l'intro couvre le viewport entier. */
+  background-image: url('../img/bg-plank.png'), url('../img/bg-tiles.png');
+  background-size: contain, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
 #filters {
@@ -277,8 +281,13 @@
   pointer-events: none;
   font-size: 9vh;
   font-weight: bold;
-  color: #000;
-  -webkit-text-stroke: 1px #fff;
+  background: -webkit-radial-gradient(#fff, #2f2f2f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 60vw 10vh;
+  background-repeat: no-repeat;
+  background-position: center center;
+  -webkit-text-stroke-linear-gradient: (#000, #eee)
 }
 
 #intro.done {
@@ -464,12 +473,7 @@ video {
 }
 
 html {
-  background-image: url('../img/bg-tiles.png');
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
+  background-color: #000;
   height: 100%;
   display: flex;
   justify-content: center;
